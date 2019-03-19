@@ -37,6 +37,9 @@ public:
     HDB(std::string gtf_fname, std::string genome_fname);
     ~HDB();
 
+    void make_trans_db(std::string out_fname,int kmerlen);
+    void make_genom_db();
+
 private:
     GffReader gtfReader_;
 
@@ -53,6 +56,17 @@ private:
     void transcript_map();
 
     HDB(); // Don't want anyone calling the constructor w/o options
+
+    int kmerlen{};
+    std::string out_fname{};
+
+    void get_exonic_sequence(GffObj& p_trans, FastaRecord& rec);
+
+    MinMap trans_map,genom_map;
+    MinMap::KmerMap::iterator trans_map_it,genom_map_it;
+
+    std::set<EVec*> kmer_coords; // genomic positions encountered
+    std::pair<std::set<EVec*>::iterator,bool> kmer_coords_exist;
 };
 
 #endif //HAIRPIN_DB_H

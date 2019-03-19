@@ -24,6 +24,7 @@ int hairpin_build(int argc,char* argv[]){
     args_build.parse_args(argc,argv);
 
     HDB hdb(args_build.get_string(Opt_Build::REF),args_build.get_string(Opt_Build::GFF));
+    hdb.make_trans_db(args_build.get_string(Opt_Build::HDB_FP),args_build.get_int(Opt_Build::KMERLEN));
 
     return 0;
 }
@@ -44,7 +45,11 @@ int hairpin_align(int argc,char* argv[]){
 
     args_align.parse_args(argc,argv);
 
-//    gffMapper(args_align.get_string(Opt::TLST_FP),args_align.get_string(Opt::IN_AL),args_align.get_string(Opt::MULTI),args_align.get_string(Opt::GLST_FP),args_align.get_flag(Opt::MULTI_FLAG));
+    // when parsing a read - need to set the minimum number of kmers that need ot be mapped from that read
+    // if fewer than n reads are mapped - remove any additions to the graph
+    // to do so efficiently - for each read keep pointer to each the node where a kmer has been inserted and the associated edges
+    // and remove them if fewer than n kmers have been matched from a read.
+
     return 0;
 }
 
