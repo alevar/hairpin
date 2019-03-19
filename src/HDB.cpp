@@ -60,6 +60,7 @@ void HDB::transcript_map(){
 }
 
 void HDB::make_trans_db(std::string out_fname,int kmerlen) {
+
     this->out_fname=out_fname;
     this->kmerlen=kmerlen;
 
