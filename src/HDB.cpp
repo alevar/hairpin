@@ -59,7 +59,7 @@ void HDB::transcript_map(){
     }
 }
 
-void HDB::make_trans_db(std::string out_fname,int kmerlen) {
+void HDB::make_db(std::string out_fname, int kmerlen) {
 
     this->out_fname=out_fname;
     this->kmerlen=kmerlen;
@@ -81,6 +81,7 @@ void HDB::make_trans_db(std::string out_fname,int kmerlen) {
         // If this contig isn't in the map, then there are no transcripts
         // associated with it. Skip it.
         if (contigTransMap_.find(cur_contig.id_) == contigTransMap_.end()){
+            HDB:get_contig_sequence(cur_contig);
             continue;
         }
 
@@ -89,13 +90,24 @@ void HDB::make_trans_db(std::string out_fname,int kmerlen) {
         for (int trans_idx : *p_contig_vec) {
             GffObj *p_trans = gtfReader_.gflst.Get(trans_idx);
             HDB::get_exonic_sequence(*p_trans, cur_contig);
+            HDB::get_contig_sequence(cur_contig);
         }
     }
     trans_map.close();
 }
 
-void HDB::make_genom_db() { //excludes parsing kmers in the regions not spanned by the
+// this method creates a kmer map for the genome
+// the method ignores any sequence spanned by transcriptome
+// additionally, the method ignores any kmeres with Ns
+void HDB::get_contig_sequence(FastaRecord &rec){
+    // TODO: iterate over all kmers in the current contig
+    // add each kmer to the map
+    // reverse complement it by using the respective function from the gdna.h
+    // add the reverse complement to the map on the opposite strand
+    EVec *cur_coords = new EVec();
+    for(int i=0; i<rec.seq_.size()-this->kmerlen;i++){
 
+    }
 }
 
 void HDB::get_exonic_sequence(GffObj &p_trans, FastaRecord &rec) {
@@ -108,7 +120,7 @@ void HDB::get_exonic_sequence(GffObj &p_trans, FastaRecord &rec) {
     int cur_pos=0;
     std::string sub_seq;
 
-    EVec *cur_coords = new EVec((uint8_t)p_trans.gseq_id,(uint8_t)p_trans.strand);
+    EVec cur_coords((uint8_t)p_trans.gseq_id,(uint8_t)p_trans.strand);
 
     for (int i = 0; i < exon_list.Count(); ++i) {
         GffExon& cur_exon = *(exon_list.Get(i));
@@ -117,7 +129,7 @@ void HDB::get_exonic_sequence(GffObj &p_trans, FastaRecord &rec) {
         if (length>1){ // sanity check for 0 and 1 baes exons
             for(int j=0;j<length;j++){ // iterate over all kmers in the given exon
                 if ((length-j)+cur_len<this->kmerlen){ // not enough coordinates - need to look at the next exon
-                    cur_coords->_push_back((uint32_t)(cur_exon.start+j),(uint32_t)cur_exon.end);
+                    cur_coords._push_back((uint32_t)(cur_exon.start+j),(uint32_t)cur_exon.end);
                     cur_len+=(cur_exon.end-(cur_exon.start+j)); // save the length that has been seen thus far
                     break;
                 }
@@ -125,26 +137,26 @@ void HDB::get_exonic_sequence(GffObj &p_trans, FastaRecord &rec) {
                     if (cur_len!=0){ // some information is left from previous exons
                         for (int g=this->kmerlen-cur_len;g<this->kmerlen;g++){ // build new sequences using past coordinates
                             sub_seq="";
-                            cur_coords->_push_back((uint32_t)(cur_exon.start+j),(uint32_t)(cur_exon.start+j+g));
+                            cur_coords._push_back((uint32_t)(cur_exon.start+j),(uint32_t)(cur_exon.start+j+g));
                             this->kmer_coords_exist=this->kmer_coords.insert(cur_coords);
                             if (this->kmer_coords_exist.second){
-                                for (int d=1;d<cur_coords->_getSize();d++){
-                                    sub_seq+=rec.seq_.substr(cur_coords->_getStart(d)-1,cur_coords->_getEnd(d)-cur_coords->_getStart(d));
+                                for (int d=0;d<cur_coords._getSize();d++){
+                                    sub_seq+=rec.seq_.substr(cur_coords._getStart(d)-1,cur_coords._getEnd(d)-cur_coords._getStart(d));
                                 }
                                 if(sub_seq.length()>this->kmerlen){
                                     std::cerr<<"1: "<<sub_seq.length()<<" "<<p_trans.getID()<<std::endl;
-                                    for(int y=0;y<cur_coords->_getSize();y++){
-                                        std::cerr<<cur_coords->_getStart(y)<<"-"<<cur_coords->_getEnd(y)<<";";
+                                    for(int y=0;y<cur_coords._getSize();y++){
+                                        std::cerr<<cur_coords._getStart(y)<<"-"<<cur_coords._getEnd(y)<<";";
                                     }
                                     std::cerr<<std::endl;
                                 }
                                 this->trans_map._insert(sub_seq,cur_coords);
                             }
                             cur_len-=1;
-                            cur_coords->_pop_back(); // need to test
-                            cur_coords->_incStart(); //need to test
-                            if (cur_coords->_getStart(0)==cur_coords->_getEnd(0)){
-                                cur_coords->_eraseFirst(); // delete the first element // need to test
+                            cur_coords._pop_back(); // need to test
+                            cur_coords._incStart(); //need to test
+                            if (cur_coords._getStart(0)==cur_coords._getEnd(0)){
+                                cur_coords._eraseFirst(); // delete the first element // need to test
                             }
                         }
                         std::transform(sub_seq.begin(), sub_seq.end(), sub_seq.begin(), ::toupper);
@@ -152,20 +164,20 @@ void HDB::get_exonic_sequence(GffObj &p_trans, FastaRecord &rec) {
                     }
                     // need to resume from the current index
                     if ((length-j)+cur_len<this->kmerlen){ // not enough coordinates - need to look at the next exon
-                        cur_coords->_push_back((uint32_t)(cur_exon.start+j),(uint32_t)(cur_exon.end));
+                        cur_coords._push_back((uint32_t)(cur_exon.start+j),(uint32_t)(cur_exon.end));
                         cur_len+=(cur_exon.end-(cur_exon.start+j));
                         break;
                     }
                     else{
-                        cur_coords->_push_back((uint32_t)(cur_exon.start+j),(uint32_t)(cur_exon.start+j+this->kmerlen));
+                        cur_coords._push_back((uint32_t)(cur_exon.start+j),(uint32_t)(cur_exon.start+j+this->kmerlen));
                         this->kmer_coords_exist=this->kmer_coords.insert(cur_coords);
                         if (this->kmer_coords_exist.second){ // was successfully inserted
                             // get sequence
                             sub_seq=rec.seq_.substr(cur_exon.start+j-1,this->kmerlen);
                             if(sub_seq.length()>this->kmerlen){
                                 std::cerr<<"2: "<<sub_seq.length()<<" "<<p_trans.getID()<<" ";
-                                for(int y=0;y<cur_coords->_getSize();y++){
-                                    std::cerr<<cur_coords->_getStart(y)<<"-"<<cur_coords->_getEnd(y)<<";";
+                                for(int y=0;y<cur_coords._getSize();y++){
+                                    std::cerr<<cur_coords._getStart(y)<<"-"<<cur_coords._getEnd(y)<<";";
                                 }
                                 std::cerr<<std::endl;
                             }
@@ -175,11 +187,36 @@ void HDB::get_exonic_sequence(GffObj &p_trans, FastaRecord &rec) {
                     }
                     // since we went into this conditional, that means no previously encountered exons are left
                     // and we can reset some things
-                    cur_coords->_erase(); // need to test
+                    cur_coords._erase(); // need to test
+                    cur_coords=EVec((uint8_t)p_trans.gseq_id,(uint8_t)p_trans.strand);
                     cur_len=0;
                 }
             }
         }
         exon_seq += rec.seq_.substr(cur_exon.start - 1, length);
     }
+}
+
+void HDB::save_trans_db(){
+
+    std::string trans_fname(this->out_fname);
+    trans_fname.append("/db.kmer.trans");
+    std::ofstream trans_fp(trans_fname.c_str());
+
+    trans_fp<<this->trans_map;
+    std::cout<<this->trans_map;
+
+    trans_fp.close();
+}
+
+void HDB::save_genom_db(){
+
+}
+
+void HDB::load_genom_db() {
+
+}
+
+void HDB::load_trans_db() {
+
 }

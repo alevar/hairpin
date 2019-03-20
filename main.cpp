@@ -24,7 +24,10 @@ int hairpin_build(int argc,char* argv[]){
     args_build.parse_args(argc,argv);
 
     HDB hdb(args_build.get_string(Opt_Build::GFF),args_build.get_string(Opt_Build::REF));
-    hdb.make_trans_db(args_build.get_string(Opt_Build::HDB_FP),args_build.get_int(Opt_Build::KMERLEN));
+    std::cout<<"building the database"<<std::endl;
+    hdb.make_db(args_build.get_string(Opt_Build::HDB_FP), args_build.get_int(Opt_Build::KMERLEN));
+    std::cout<<"saving the database"<<std::endl;
+    hdb.save_trans_db();
 
     return 0;
 }

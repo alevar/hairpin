@@ -38,6 +38,22 @@ public:
     uint32_t getEnd(){return this->end;}
     void incStart(){this->start++;}
 
+    friend std::ostream& operator<<(std::ostream& os, const EPair& ep){
+        os<<ep.start<<"-"<<ep.end;
+        return os;
+    }
+
+    bool operator< (const EPair& ep) const{
+        return (this->start < ep.start || this->end < ep.end);
+    }
+    bool operator> (const EPair& ep) const{
+        return (this->start > ep.start);
+    }
+    bool operator== (const EPair& ep) const{
+        return (this->start == ep.start && this->end == ep.end);
+    }
+
+
 private:
     uint32_t start{};
     uint32_t end{};
@@ -45,7 +61,7 @@ private:
 
 class EVec{
 public:
-    EVec() = default;
+    EVec(){this->size=0;};
     EVec(uint8_t chrID,uint8_t strand){
         this->chrID=chrID;
         this->strand=strand;
@@ -54,7 +70,7 @@ public:
     ~EVec() = default;
 
     void _push_back(uint32_t start, uint32_t end){
-        coords.push_back(new EPair(start,end));
+        coords.push_back(EPair(start,end));
         size++;
     }
     void _pop_back(){
@@ -62,18 +78,50 @@ public:
         this->size--;
     }
 
-    EPair* _get(int pos){return coords[pos];}
+    EPair _get(int pos){return coords[pos];}
     uint8_t _getChr(){return this->chrID;}
     uint8_t _getStrand(){return this->strand;}
     int _getSize(){return this->size;}
-    uint32_t _getStart(int pos){return this->coords[pos]->getStart();}
-    uint32_t _getEnd(int pos){return this->coords[pos]->getEnd();}
-    void _incStart(){this->coords[0]->incStart();}
-    void _eraseFirst(){this->coords.erase(this->coords.begin());}
-    void _erase(){this->coords.erase(this->coords.begin(),this->coords.end());}
+    uint32_t _getStart(int pos){return this->coords[pos].getStart();}
+    uint32_t _getEnd(int pos){return this->coords[pos].getEnd();}
+    void _incStart(){this->coords[0].incStart();}
+    void _eraseFirst(){
+        this->coords.erase(this->coords.begin());
+        this->size--;
+    }
+    void _erase(){
+        this->coords.erase(this->coords.begin(),this->coords.end());
+        this->size=0;
+    }
+
+    typedef std::vector<EPair>::iterator iterator;
+    typedef std::vector<EPair>::const_iterator const_iterator;
+    typedef std::vector<EPair>::reference reference;
+    iterator begin() {return coords.begin();}
+    const_iterator begin() const { return coords.begin();}
+    iterator end() {return coords.end();}
+    const_iterator end() const { return coords.end();}
+
+    friend std::ostream& operator<<(std::ostream& os, const EVec& ev){
+        os<<(int)ev.chrID<<":"<<(int)ev.strand<<"\t";
+        for(auto it_ep: ev){
+            os<<it_ep<<",";
+        }
+        return os;
+    }
+
+    bool operator< (const EVec& ev) const{
+        return (this->chrID < ev.chrID || this->strand < ev.strand || this->coords <  ev.coords);
+    }
+    bool operator> (const EVec& ev) const{
+        return (this->chrID > ev.chrID || this->strand > ev.strand || this->coords >  ev.coords);
+    }
+    bool operator==(const EVec& ev) const{
+        return (this->chrID == ev.chrID && this->strand == ev.strand && this->coords ==  ev.coords);
+    }
 
 private:
-    std::vector<EPair*> coords{};
+    std::vector<EPair> coords{};
     uint8_t chrID{};
     uint8_t strand{};
     int size{};
@@ -84,19 +132,19 @@ public:
     MinMap()=default;
     ~MinMap()=default;
 
-    typedef std::map<std::string,std::vector< EVec*> > KmerMap;
+    typedef std::map<std::string,std::vector<EVec> > KmerMap;
 
     // this method inserts a new kmer if exists, or updates with a new kmer if does not exist
     KmerMap::iterator _insert(std::string key, uint8_t chrID,uint8_t strand){
-        std::pair<KmerMap::iterator,bool> mm_it = minmap.insert(std::pair<std::string,std::vector<EVec*>>(key,{}));
+        std::pair<KmerMap::iterator,bool> mm_it = minmap.insert(std::pair<std::string,std::vector<EVec>>(key,{}));
         if(mm_it.second){ // the kmer previously did not exist
             numKmer++;
         }
-        mm_it.first->second.push_back(new EVec(chrID,strand));
+        mm_it.first->second.push_back(EVec(chrID,strand));
         return mm_it.first;
     } // insert key and initiate a new EVec with given a given chrID and strand information
-    KmerMap::iterator _insert(std::string key,EVec *ev){
-        std::pair<KmerMap::iterator,bool> mm_it = minmap.insert(std::pair<std::string,std::vector<EVec*>>(key,{}));
+    KmerMap::iterator _insert(std::string key,EVec ev){
+        std::pair<KmerMap::iterator,bool> mm_it = minmap.insert(std::pair<std::string,std::vector<EVec>>(key,{}));
         if(mm_it.second){ // the kmer previously did not exist
             numKmer++;
         }
@@ -106,13 +154,32 @@ public:
 
     // this method adds coordinates to the kmer at a given map given an iterator
     void _add(KmerMap::iterator mm_it,uint32_t start,uint32_t end){
-        mm_it->second.back()->_push_back(start,end);
+        mm_it->second.back()._push_back(start,end);
     }
     int _getNumMultimappers(std::string key){ // this method returns the number of multimappers the given kmer has
         return minmap[key].size();
     }
     int _getNumKmers(){
         return numKmer;
+    }
+
+    typedef KmerMap::iterator iterator;
+    typedef KmerMap::const_iterator const_iterator;
+    typedef KmerMap::reference reference;
+    iterator begin() {return minmap.begin();}
+    const_iterator begin() const { return minmap.begin();}
+    iterator end() {return minmap.end();}
+    const_iterator end() const { return minmap.end();}
+
+    friend std::ostream& operator<<(std::ostream& os, const MinMap& mm){
+        for(auto it_mm: mm){
+            os<<it_mm.first<<"\t";
+            for(auto it_ev: it_mm.second){
+                os<<it_ev<<";";
+            }
+            os<<std::endl;
+        }
+        return os;
     }
 
 private:
