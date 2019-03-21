@@ -273,11 +273,27 @@ void HDB::get_exonic_sequence(GffObj &p_trans, FastaRecord &rec, uint8_t contigI
 }
 
 void HDB::save_db_info(){ // this method saves the general info about the database such as kmerlen, num kmers in transcriptome, num kmers in genome etc.
+    std::string dbinfo_fname(this->out_fname);
+    dbinfo_fname.append("/db.info");
+    std::ofstream dbinfo_fp(dbinfo_fname.c_str());
 
+    dbinfo_fp<<"kmerlen"<<"\t"<<(int)this->kmerlen<<std::endl;
+    dbinfo_fp<<"num trans kmer"<<"\t"<<(int)this->trans_map._getNumKmers()<<std::endl;
+    dbinfo_fp<<"num genome kmer"<<"\t"<<(int)this->genom_map.size()<<std::endl;
+
+    dbinfo_fp.close();
 }
 
 void HDB::save_contig_info(){ // this method saves the map of contigs to IDs
+    std::string contiginfo_fname(this->out_fname);
+    contiginfo_fname.append("/contig.info");
+    std::ofstream contiginfo_fp(contiginfo_fname.c_str());
 
+    for(auto it: this->id_to_contig){
+        contiginfo_fp<<(int)it.first<<"\t"<<it.second.first<<"\t"<<it.second.second<<std::endl;
+    }
+
+    contiginfo_fp.close();
 }
 
 void HDB::save_trans_db(){
@@ -287,7 +303,6 @@ void HDB::save_trans_db(){
     std::ofstream trans_fp(trans_fname.c_str());
 
     trans_fp<<this->trans_map;
-//    std::cout<<this->trans_map;
 
     trans_fp.close();
 }
@@ -321,4 +336,20 @@ void HDB::load_db_info(){
 
 void HDB::load_contig_info(){
 
+}
+
+void save_db(){
+    HDB::save_trans_db();
+    HDB::save_genom_db();
+    HDB::save_db_info();
+    HDB::save_contig_info();
+}
+
+void load_db(std::string db_fname_base){
+    // first check that everything is there
+    // then load the componenets
+    HDB::load_trans_db();
+    HDB::load_genom_db();
+    HDB::load_db_info();
+    HDB::load_contig_info();
 }

@@ -27,10 +27,7 @@ int hairpin_build(int argc,char* argv[]){
     std::cout<<"building the database"<<std::endl;
     hdb.make_db(args_build.get_string(Opt_Build::HDB_FP), args_build.get_int(Opt_Build::KMERLEN));
     std::cout<<"saving the database"<<std::endl;
-    hdb.save_trans_db();
-    hdb.save_genom_db();
-    hdb.save_db_info();
-    hdb.save_contig_info();
+    hdb.save_db();
 
     return 0;
 }
@@ -50,6 +47,9 @@ int hairpin_align(int argc,char* argv[]){
     args_align.add_string(Opt_Align::UNPAIR,"unpaired","","");
 
     args_align.parse_args(argc,argv);
+
+    HDB hdb();
+    hdb.load_db();
 
     // when parsing a read - need to set the minimum number of kmers that need ot be mapped from that read
     // if fewer than n reads are mapped - remove any additions to the graph

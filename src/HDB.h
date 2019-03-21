@@ -40,15 +40,8 @@ public:
 
     void make_db(std::string out_fname, int kmerlen);
 
-    void save_trans_db();
-    void save_genom_db();
-    void save_db_info();
-    void save_contig_info();
-
-    void load_trans_db();
-    void load_genom_db();
-    void load_db_info();
-    void load_contig_info();
+    void save_db();
+    void load_db();
 
 private:
     GffReader gtfReader_;
@@ -87,6 +80,16 @@ private:
     std::map<uint8_t, std::pair<std::string,int> > id_to_contig;
     std::pair<std::map<std::string,uint8_t>::iterator,bool> contig_exists;
     uint8_t maxID=0;
+
+    void save_trans_db();
+    void save_genom_db();
+    void save_db_info();
+    void save_contig_info();
+
+    void load_trans_db();
+    void load_genom_db();
+    void load_db_info();
+    void load_contig_info();
 };
 
 #endif //HAIRPIN_DB_H
