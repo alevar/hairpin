@@ -42,9 +42,13 @@ public:
 
     void save_trans_db();
     void save_genom_db();
+    void save_db_info();
+    void save_contig_info();
 
     void load_trans_db();
     void load_genom_db();
+    void load_db_info();
+    void load_contig_info();
 
 private:
     GffReader gtfReader_;
@@ -66,14 +70,23 @@ private:
     int kmerlen{};
     std::string out_fname{};
 
-    void get_exonic_sequence(GffObj& p_trans, FastaRecord& rec);
-    void get_contig_sequence(FastaRecord& rec); // TODO: reverse complement each kmer
+    void get_exonic_sequence(GffObj& p_trans, FastaRecord& rec, uint8_t contigID, int& lastPosition);
+    void process_contig(std::string seq, uint8_t chrID, uint8_t strand, uint8_t rev_strand, bool checkTrans); // TODO: reverse complement each kmer
 
-    MinMap trans_map,genom_map;
+    void process_kmers(MinMap& mm); // process individual kmers
+
+    MinMap trans_map;
+    std::map<std::string,std::tuple<uint8_t,uint8_t,uint32_t> > genom_map;
     MinMap::KmerMap::iterator trans_map_it,genom_map_it;
 
-    std::set<EVec> kmer_coords; // genomic positions encountered
-    std::pair<std::set<EVec>::iterator,bool> kmer_coords_exist;
+    std::set<EVec> kmer_coords; // genomic positions encountered in trans_map
+    std::set<EVec> kmer_coords_genom; // genomic positions encountered in genom_map
+    std::pair<std::set<EVec>::iterator,bool> kmer_coords_exist,kmer_coords_genom_exist;
+
+    std::map<std::string, uint8_t > contig_to_id;
+    std::map<uint8_t, std::pair<std::string,int> > id_to_contig;
+    std::pair<std::map<std::string,uint8_t>::iterator,bool> contig_exists;
+    uint8_t maxID=0;
 };
 
 #endif //HAIRPIN_DB_H

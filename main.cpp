@@ -28,6 +28,9 @@ int hairpin_build(int argc,char* argv[]){
     hdb.make_db(args_build.get_string(Opt_Build::HDB_FP), args_build.get_int(Opt_Build::KMERLEN));
     std::cout<<"saving the database"<<std::endl;
     hdb.save_trans_db();
+    hdb.save_genom_db();
+    hdb.save_db_info();
+    hdb.save_contig_info();
 
     return 0;
 }
