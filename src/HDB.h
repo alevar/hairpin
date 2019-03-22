@@ -36,12 +36,13 @@
 class HDB {
 public:
     HDB(std::string gtf_fname, std::string genome_fname);
+    HDB();
     ~HDB();
 
     void make_db(std::string out_fname, int kmerlen);
 
     void save_db();
-    void load_db();
+    void load_db(std::string fb_fname_base);
 
 private:
     GffReader gtfReader_;
@@ -57,8 +58,6 @@ private:
     MinMap kmers;
 
     void transcript_map();
-
-    HDB(); // Don't want anyone calling the constructor w/o options
 
     int kmerlen{};
     std::string out_fname{};

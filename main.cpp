@@ -32,15 +32,15 @@ int hairpin_build(int argc,char* argv[]){
     return 0;
 }
 
-int hairpin_align(int argc,char* argv[]){
-    enum Opt_Align {HDB   = 'x',
+int hairpin_quant(int argc,char* argv[]){
+    enum Opt_Align {HDB_FP   = 'x',
                     OUTPUT= 'o',
                     READ1 = '1',
                     READ2 = '2',
                     UNPAIR= 'u'};
 
     ArgParse args_align("hairpin_align");
-    args_align.add_string(Opt_Align::HDB,"hdb","","");
+    args_align.add_string(Opt_Align::HDB_FP,"hdb","","");
     args_align.add_string(Opt_Align::OUTPUT,"output","","");
     args_align.add_string(Opt_Align::READ1,"input1","","");
     args_align.add_string(Opt_Align::READ2,"input2","","");
@@ -48,8 +48,8 @@ int hairpin_align(int argc,char* argv[]){
 
     args_align.parse_args(argc,argv);
 
-    HDB hdb();
-    hdb.load_db();
+    HDB hdb;
+    hdb.load_db(args_align.get_string(Opt_Align::HDB_FP));
 
     // when parsing a read - need to set the minimum number of kmers that need ot be mapped from that read
     // if fewer than n reads are mapped - remove any additions to the graph
@@ -73,7 +73,7 @@ int main(int argc, char* argv[]) {
         int argc_quant=argc-1;
         char* argv_quant[argc_quant];
         memcpy(argv_quant, argv+1, argc_quant*sizeof(char*));
-        hairpin_build(argc_quant,argv_quant);
+        hairpin_quant(argc_quant,argv_quant);
     }
     else if (strcmp(argv[1],"help") == 0 || strcmp(argv[1],"--help") == 0){
         print_help();

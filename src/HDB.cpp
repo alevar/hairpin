@@ -338,18 +338,57 @@ void HDB::load_contig_info(){
 
 }
 
-void save_db(){
+void HDB::save_db(){
     HDB::save_trans_db();
     HDB::save_genom_db();
     HDB::save_db_info();
     HDB::save_contig_info();
 }
 
-void load_db(std::string db_fname_base){
+void HDB::load_db(std::string db_fname_base){
     // first check that everything is there
     // then load the componenets
-    HDB::load_trans_db();
-    HDB::load_genom_db();
-    HDB::load_db_info();
-    HDB::load_contig_info();
+    if(db_fname_base.rfind("/")==db_fname_base.length()-1){
+        db_fname_base.pop_back();
+    }
+    std::string genom_fname(db_fname_base);
+    genom_fname.append("/db.kmer.genom");
+    std::string trans_fname(db_fname_base);
+    trans_fname.append("/db.kmer.trans");
+    std::string dbinfo_fname(db_fname_base);
+    dbinfo_fname.append("/db.info");
+    std::string contiginfo_fname(db_fname_base);
+    contiginfo_fname.append("/contig.info");
+
+    std::ifstream genom_fp;
+    genom_fp.open(genom_fname.c_str(),std::ios::in);
+    if(!genom_fp.good()){
+        std::cerr<<"FATAL: Couldn't open genome kmer data: "<<genom_fname<<std::endl;
+        exit(1);
+    }
+    genom_fp.close();
+
+    std::ifstream trans_fp;
+    trans_fp.open(trans_fname.c_str(),std::ios::in);
+    if(!trans_fp.good()){
+        std::cerr<<"FATAL: Couldn't open transcriptome kmer data: "<<trans_fname<<std::endl;
+        exit(1);
+    }
+    trans_fp.close();
+
+    std::ifstream dbinfo_fp;
+    dbinfo_fp.open(dbinfo_fname.c_str(),std::ios::in);
+    if(!dbinfo_fp.good()){
+        std::cerr<<"FATAL: Couldn't open database info file: "<<dbinfo_fname<<std::endl;
+        exit(1);
+    }
+    dbinfo_fp.close();
+
+    std::ifstream contiginfo_fp;
+    contiginfo_fp.open(contiginfo_fname.c_str(),std::ios::in);
+    if(!contiginfo_fp.good()){
+        std::cerr<<"FATAL: Couldn't open contig info file: "<<contiginfo_fname<<std::endl;
+        exit(1);
+    }
+    contiginfo_fp.close();
 }
