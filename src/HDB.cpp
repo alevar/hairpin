@@ -109,7 +109,6 @@ void HDB::make_db(std::string out_fname, int kmerlen) {
 // the method ignores any sequence spanned by transcriptome
 // additionally, the method ignores any kmeres with Ns
 void HDB::process_contig(std::string seq, uint8_t chrID, uint8_t strand, uint8_t rev_strand, bool checkTrans){
-
     if(checkTrans){
         for(uint32_t i=0;i<seq.length()-this->kmerlen;i++){ // iterate over the kmers in the current sequence and put them all into the map
             if(i%1000000==0){
@@ -125,16 +124,18 @@ void HDB::process_contig(std::string seq, uint8_t chrID, uint8_t strand, uint8_t
 
             std::string cur_kmer=seq.substr(i,this->kmerlen);
             std::transform(cur_kmer.begin(), cur_kmer.end(), cur_kmer.begin(), ::toupper);
-            size_t n_pos=cur_kmer.rfind("N");
+            size_t n_pos=cur_kmer.rfind('N');
             if(n_pos!=std::string::npos){ // found n and need to now skip by the kmerlen
                 i+=n_pos;
                 continue;
             }
-            this->genom_map.insert(std::make_pair(cur_kmer,std::make_tuple(chrID,strand,i)));
+            this->genom_map_it=this->genom_map.insert(std::pair<std::string,GenVec>(cur_kmer,{}));
+            this->genom_map_it.first->second.emplace_back(std::make_tuple(chrID,strand,i));
             char *rev_cur_kmer = new char[this->kmerlen];
             strcpy(rev_cur_kmer, cur_kmer.c_str());
             reverseComplement(rev_cur_kmer,this->kmerlen);
-            this->genom_map.insert(std::make_pair(std::string(rev_cur_kmer),std::make_tuple(chrID,rev_strand,i)));
+            this->genom_map_it=this->genom_map.insert(std::pair<std::string,GenVec>(rev_cur_kmer,{}));
+            this->genom_map_it.first->second.emplace_back(std::make_tuple(chrID,rev_strand,i));
             delete [] rev_cur_kmer;
         }
     }
@@ -145,16 +146,18 @@ void HDB::process_contig(std::string seq, uint8_t chrID, uint8_t strand, uint8_t
             }
             std::string cur_kmer=seq.substr(i,this->kmerlen);
             std::transform(cur_kmer.begin(), cur_kmer.end(), cur_kmer.begin(), ::toupper);
-            size_t n_pos=cur_kmer.find_first_of("N");
+            size_t n_pos=cur_kmer.find_first_of('N');
             if(n_pos!=std::string::npos){ // found n and need to now skip by the kmerlen
                 i+=n_pos;
                 continue;
             }
-            this->genom_map.insert(std::make_pair(cur_kmer,std::make_tuple(chrID,strand,i)));
+            this->genom_map_it=this->genom_map.insert(std::pair<std::string,GenVec>(cur_kmer,{}));
+            this->genom_map_it.first->second.emplace_back(std::make_tuple(chrID,strand,i));
             char *rev_cur_kmer = new char[this->kmerlen];
             strcpy(rev_cur_kmer, cur_kmer.c_str());
             reverseComplement(rev_cur_kmer,this->kmerlen);
-            this->genom_map.insert(std::make_pair(std::string(rev_cur_kmer),std::make_tuple(chrID,rev_strand,i)));
+            this->genom_map_it=this->genom_map.insert(std::pair<std::string,GenVec>(rev_cur_kmer,{}));
+            this->genom_map_it.first->second.emplace_back(std::make_tuple(chrID,rev_strand,i));
             delete [] rev_cur_kmer;
         }
     }
@@ -316,26 +319,121 @@ void HDB::save_genom_db(){
     uint32_t pos;
 
     for(auto it: this->genom_map){
-        std::tie(chrID,strand,pos) = it.second;
-        genom_fp<<it.first<<'\t'<<(int)chrID<<":"<<(int)strand<<"\t"<<pos<<std::endl;
+        genom_fp<<it.first<<'\t';
+        for(auto vit: it.second) {
+            std::tie(chrID,strand,pos) = vit;
+            genom_fp << (int) chrID << ":" << (int) strand << "@" << pos<<";";
+        }
+        genom_fp<<std::endl;
     }
     genom_fp.close();
 }
 
-void HDB::load_genom_db() {
+void HDB::load_genom_db(std::ifstream& stream) {
+    std::ios::sync_with_stdio(false);
+    std::string line;
+    std::stringstream ss(""), sub_ss("");
+    std::string kmer,pos_string,chrID,strand,pos;
+    while(std::getline(stream,line)) { // iterate over all kmers
+        GenVec gv;
+        ss.str(line);
+        ss.clear();
 
+        std::getline(ss, kmer, '\t');
+        std::getline(ss, pos_string, '\t');
+
+        ss.str(pos_string);
+        ss.clear();
+
+        while(std::getline(ss,pos_string,';')){ // iterate over all positions for a given kmer
+            sub_ss.str(pos_string);
+            sub_ss.clear();
+            std::getline(sub_ss,chrID,':');
+            std::getline(sub_ss,strand,'@');
+            std::getline(sub_ss,pos,';');
+            gv.emplace_back(std::make_tuple((uint8_t)std::stoi(chrID),(uint8_t)std::stoi(strand),(uint32_t)std::stoi(pos)));
+        }
+        this->genom_map.insert(std::make_pair(kmer,gv));
+    }
 }
 
-void HDB::load_trans_db() {
+void HDB::load_trans_db(std::ifstream& stream) {
+    std::ios::sync_with_stdio(false);
+    std::string line;
+    std::stringstream ss(""), sub_ss(""), sub_sub_ss("");
+    std::string kmer,pos_string,chrID,strand, pos_vec,start,end;
+    while(std::getline(stream,line)) { // iterate over all kmers
+        std::vector<EVec> vev;
+        ss.str(line);
+        ss.clear();
 
+        std::getline(ss, kmer, '\t');
+        std::getline(ss, pos_string, '\t');
+
+        ss.str(pos_string);
+        ss.clear();
+
+        while(std::getline(ss,pos_string,';')){ // iterate over all positions for a given kmer
+            sub_ss.str(pos_string);
+            sub_ss.clear();
+            std::getline(sub_ss,chrID,':');
+            std::getline(sub_ss,strand,'@');
+            std::getline(sub_ss,pos_vec,';');
+
+            EVec ev((uint8_t)std::stoi(chrID),(uint8_t)std::stoi(strand));
+            sub_ss.str(pos_vec);
+            sub_ss.clear();
+            while(std::getline(sub_ss,pos_vec,',')){
+                sub_sub_ss.str(pos_vec);
+                sub_sub_ss.clear();
+                std::getline(sub_sub_ss,start,'-');
+                std::getline(sub_sub_ss,end,',');
+                ev._push_back((uint32_t)std::stoi(start),(uint32_t)std::stoi(end));
+            }
+            vev.emplace_back(ev);
+        }
+        this->trans_map._insert(kmer,vev);
+    }
 }
 
-void HDB::load_db_info(){
+void HDB::load_db_info(std::ifstream& stream){
+    std::ios::sync_with_stdio(false);
+    std::string line;
+    std::stringstream ss("");
+    std::string kmerlen,prename;
+    while(std::getline(stream,line)) {
+        ss.str(line);
+        ss.clear();
 
+        std::getline(ss, prename, '\t');
+        if (std::strcmp(prename.c_str(), "kmerlen") == 0) {
+            std::getline(ss, kmerlen, '\t');
+            this->kmerlen=std::stoi(kmerlen);
+            return;
+        }
+    }
+    std::cerr<<"kmerlen unknown from the databse"<<std::endl;
+    exit(1);
+    return;
 }
 
-void HDB::load_contig_info(){
+void HDB::load_contig_info(std::ifstream& stream){
 
+    std::ios::sync_with_stdio(false);
+    std::string line;
+    std::stringstream ss("");
+    std::string contigName,contigID,contigLength;
+
+    while (std::getline(stream,line)){
+        ss.str(line);
+        ss.clear();
+
+        std::getline(ss,contigID,'\t');
+        std::getline(ss,contigName,'\t');
+        std::getline(ss,contigLength,'\t');
+        this->contig_to_id.insert(std::make_pair(contigName,std::stoi(contigID)));
+        this->id_to_contig.insert(std::make_pair(std::stoi(contigID),std::make_pair(contigName,std::stoi(contigLength))));
+    }
 }
 
 void HDB::save_db(){
@@ -348,7 +446,7 @@ void HDB::save_db(){
 void HDB::load_db(std::string db_fname_base){
     // first check that everything is there
     // then load the componenets
-    if(db_fname_base.rfind("/")==db_fname_base.length()-1){
+    if(db_fname_base.rfind('/')==db_fname_base.length()-1){
         db_fname_base.pop_back();
     }
     std::string genom_fname(db_fname_base);
@@ -360,21 +458,24 @@ void HDB::load_db(std::string db_fname_base){
     std::string contiginfo_fname(db_fname_base);
     contiginfo_fname.append("/contig.info");
 
+    //TODO: uncomment after a more reasonably sized database is configured
+//    std::ifstream trans_fp;
+//    trans_fp.open(trans_fname.c_str(),std::ios::in);
+//    if(!trans_fp.good()){
+//        std::cerr<<"FATAL: Couldn't open transcriptome kmer data: "<<trans_fname<<std::endl;
+//        exit(1);
+//    }
+//    HDB::load_trans_db(trans_fp);
+//    trans_fp.close();
+
     std::ifstream genom_fp;
     genom_fp.open(genom_fname.c_str(),std::ios::in);
     if(!genom_fp.good()){
         std::cerr<<"FATAL: Couldn't open genome kmer data: "<<genom_fname<<std::endl;
         exit(1);
     }
+    HDB::load_genom_db(genom_fp);
     genom_fp.close();
-
-    std::ifstream trans_fp;
-    trans_fp.open(trans_fname.c_str(),std::ios::in);
-    if(!trans_fp.good()){
-        std::cerr<<"FATAL: Couldn't open transcriptome kmer data: "<<trans_fname<<std::endl;
-        exit(1);
-    }
-    trans_fp.close();
 
     std::ifstream dbinfo_fp;
     dbinfo_fp.open(dbinfo_fname.c_str(),std::ios::in);
@@ -382,6 +483,7 @@ void HDB::load_db(std::string db_fname_base){
         std::cerr<<"FATAL: Couldn't open database info file: "<<dbinfo_fname<<std::endl;
         exit(1);
     }
+    HDB::load_db_info(dbinfo_fp);
     dbinfo_fp.close();
 
     std::ifstream contiginfo_fp;
@@ -390,5 +492,6 @@ void HDB::load_db(std::string db_fname_base){
         std::cerr<<"FATAL: Couldn't open contig info file: "<<contiginfo_fname<<std::endl;
         exit(1);
     }
+    HDB::load_contig_info(contiginfo_fp);
     contiginfo_fp.close();
 }

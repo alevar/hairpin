@@ -44,6 +44,8 @@ public:
     void save_db();
     void load_db(std::string fb_fname_base);
 
+    // TODO: method to find all coordinates of a kmer - needs to first search in the transcriptomic map and then in genomic and return all coordinates
+
 private:
     GffReader gtfReader_;
 
@@ -63,13 +65,16 @@ private:
     std::string out_fname{};
 
     void get_exonic_sequence(GffObj& p_trans, FastaRecord& rec, uint8_t contigID, int& lastPosition);
-    void process_contig(std::string seq, uint8_t chrID, uint8_t strand, uint8_t rev_strand, bool checkTrans); // TODO: reverse complement each kmer
+    void process_contig(std::string seq, uint8_t chrID, uint8_t strand, uint8_t rev_strand, bool checkTrans);
 
     void process_kmers(MinMap& mm); // process individual kmers
 
     MinMap trans_map;
-    std::map<std::string,std::tuple<uint8_t,uint8_t,uint32_t> > genom_map;
-    MinMap::KmerMap::iterator trans_map_it,genom_map_it;
+    typedef std::vector<std::tuple<uint8_t,uint8_t,uint32_t>> GenVec;
+    typedef std::map<std::string,GenVec> GenMap;
+    GenMap genom_map;
+    std::pair<GenMap::iterator,bool> genom_map_it;
+    MinMap::KmerMap::iterator trans_map_it;
 
     std::set<EVec> kmer_coords; // genomic positions encountered in trans_map
     std::set<EVec> kmer_coords_genom; // genomic positions encountered in genom_map
@@ -85,10 +90,10 @@ private:
     void save_db_info();
     void save_contig_info();
 
-    void load_trans_db();
-    void load_genom_db();
-    void load_db_info();
-    void load_contig_info();
+    void load_trans_db(std::ifstream& stream);
+    void load_genom_db(std::ifstream& stream);
+    void load_db_info(std::ifstream& stream);
+    void load_contig_info(std::ifstream& fp);
 };
 
 #endif //HAIRPIN_DB_H

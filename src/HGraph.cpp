@@ -3,3 +3,15 @@
 //
 
 #include "HGraph.h"
+
+HGraph::HGraph() {
+
+}
+
+HGraph::~HGraph() {
+
+}
+
+void HGraph::add_read(std::string &read) {
+
+}

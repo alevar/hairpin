@@ -103,7 +103,7 @@ public:
     const_iterator end() const { return coords.end();}
 
     friend std::ostream& operator<<(std::ostream& os, const EVec& ev){
-        os<<(int)ev.chrID<<":"<<(int)ev.strand<<"\t";
+        os<<(int)ev.chrID<<":"<<(int)ev.strand<<"@";
         for(auto it_ep: ev){
             os<<it_ep<<",";
         }
@@ -167,6 +167,13 @@ public:
             numKmer++;
         }
         mm_it.first->second.push_back(ev);
+        return mm_it.first;
+    }
+    KmerMap::iterator _insert(std::string key,std::vector<EVec> vev){
+        std::pair<KmerMap::iterator,bool> mm_it = minmap.insert(std::make_pair(key,vev));
+        if(mm_it.second){ // the kmer previously did not exist
+            numKmer++;
+        }
         return mm_it.first;
     }
 

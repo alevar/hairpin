@@ -4,9 +4,20 @@
 
 #include "src/arg_parse.h"
 #include "src/HDB.h"
+#include "src/HGraph.h"
 
 void print_help(){
     std::cout<<"help page"<<std::endl;
+}
+
+void process_reads_single(HDB& hdb,std::string readsFP, HGraph& hg){
+    FastaReader fastaReader(readsFP);
+    FastaRecord read;
+
+    while (fastaReader.good()) {
+        fastaReader.next(read);
+        hg.add_read(read.seq_);
+    }
 }
 
 int hairpin_build(int argc,char* argv[]){
@@ -33,23 +44,28 @@ int hairpin_build(int argc,char* argv[]){
 }
 
 int hairpin_quant(int argc,char* argv[]){
-    enum Opt_Align {HDB_FP   = 'x',
+    enum Opt_Quant {HDB_FP   = 'x',
                     OUTPUT= 'o',
                     READ1 = '1',
                     READ2 = '2',
-                    UNPAIR= 'u'};
+                    UNPAIR= 'u',
+                    REF   = 'r'};
 
-    ArgParse args_align("hairpin_align");
-    args_align.add_string(Opt_Align::HDB_FP,"hdb","","");
-    args_align.add_string(Opt_Align::OUTPUT,"output","","");
-    args_align.add_string(Opt_Align::READ1,"input1","","");
-    args_align.add_string(Opt_Align::READ2,"input2","","");
-    args_align.add_string(Opt_Align::UNPAIR,"unpaired","","");
+    ArgParse args_quant("hairpin_align");
+    args_quant.add_string(Opt_Quant::HDB_FP,"hdb","","");
+    args_quant.add_string(Opt_Quant::OUTPUT,"output","","");
+    args_quant.add_string(Opt_Quant::READ1,"input1","","");
+    args_quant.add_string(Opt_Quant::READ2,"input2","","");
+    args_quant.add_string(Opt_Quant::UNPAIR,"unpaired","","");
+    args_quant.add_string(Opt_Quant::REF,"reference","","")
 
-    args_align.parse_args(argc,argv);
+    args_quant.parse_args(argc,argv);
 
     HDB hdb;
-    hdb.load_db(args_align.get_string(Opt_Align::HDB_FP));
+    hdb.load_db(args_quant.get_string(Opt_Quant::HDB_FP));
+
+    HGraph hg;
+    process_reads_single(hdb,args_quant.get_string(Opt_Quant::UNPAIR), hg);
 
     // when parsing a read - need to set the minimum number of kmers that need ot be mapped from that read
     // if fewer than n reads are mapped - remove any additions to the graph
