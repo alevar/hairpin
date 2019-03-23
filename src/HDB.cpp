@@ -181,70 +181,31 @@ void HDB::get_exonic_sequence(GffObj &p_trans, FastaRecord &rec, uint8_t contigI
 
     EVec cur_coords(contigID,(uint8_t)p_trans.strand);
 
+    bool exhaustedExon=false;
+
     for (int i = 0; i < exon_list.Count(); ++i) {
         GffExon& cur_exon = *(exon_list.Get(i));
-        length = cur_exon.end - cur_exon.start + 1;
+        length = (cur_exon.end+1) - cur_exon.start;
 
-        if (length>1) { // sanity check for 0 and 1 base exons
-            for (int j = 0; j < length; j++) { // iterate over all kmers in the given exon
-                if ((length - j) + cur_len < this->kmerlen) { // not enough coordinates - need to look at the next exon
-                    cur_coords._push_back((uint32_t) (cur_exon.start + j), (uint32_t) cur_exon.end);
-                    cur_len += (cur_exon.end - (cur_exon.start + j)); // save the length that has been seen thus far
-                    break;
-                } else { // otherwise we have all the bases we need and can evaluate their uniqueness
-                    if (cur_len != 0) { // some information is left from previous exons
-                        for (int g = this->kmerlen - cur_len;
-                             g < this->kmerlen; g++) { // build new sequences using past coordinates
-                            sub_seq = "";
-                            cur_coords._push_back((uint32_t) (cur_exon.start + j), (uint32_t) (cur_exon.start + j + g));
-                            this->kmer_coords_exist = this->kmer_coords.insert(cur_coords);
-                            if (this->kmer_coords_exist.second) {
-                                for (int d = 0; d < cur_coords._getSize(); d++) {
-                                    sub_seq += rec.seq_.substr(cur_coords._getStart(d) - 1,
-                                                               cur_coords._getEnd(d) - cur_coords._getStart(d));
-                                }
-                                if (sub_seq.length() > this->kmerlen) {
-                                    std::cerr << "1: " << sub_seq.length() << " " << p_trans.getID() << std::endl;
-                                    for (int y = 0; y < cur_coords._getSize(); y++) {
-                                        std::cerr << cur_coords._getStart(y) << "-" << cur_coords._getEnd(y) << ";";
-                                    }
-                                    std::cerr << std::endl;
-                                }
-                                std::transform(sub_seq.begin(), sub_seq.end(), sub_seq.begin(), ::toupper);
-                                this->trans_map._insert(sub_seq, cur_coords);
-                                // do reverse_complement
-                                char *rev_cur_kmer = new char[this->kmerlen];
-                                strcpy(rev_cur_kmer, sub_seq.c_str());
-                                reverseComplement(rev_cur_kmer, this->kmerlen);
-                                cur_coords.flipStrand(); // change strand information for the reverse complement
-                                this->trans_map._insert(std::string(rev_cur_kmer), cur_coords);
-                                cur_coords.flipStrand(); // reset the strand information back
-                                delete[] rev_cur_kmer;
-                            }
-                            cur_len -= 1;
-                            cur_coords._pop_back(); // need to test
-                            cur_coords._incStart(); //need to test
-                            if (cur_coords._getStart(0) == cur_coords._getEnd(0)) {
-                                cur_coords._eraseFirst(); // delete the first element // need to test
-                            }
-                        }
-                        // add new coordinates first
-                    }
-                    // need to resume from the current index
-                    if ((length - j) + cur_len <
-                        this->kmerlen) { // not enough coordinates - need to look at the next exon
-                        cur_coords._push_back((uint32_t) (cur_exon.start + j), (uint32_t) (cur_exon.end));
-                        cur_len += (cur_exon.end - (cur_exon.start + j));
-                        break;
-                    } else {
-                        cur_coords._push_back((uint32_t) (cur_exon.start + j),
-                                              (uint32_t) (cur_exon.start + j + this->kmerlen));
+        for (int j = 0; j < length; j++) { // iterate over all kmers in the given exon
+            if ((length - j) + cur_len < this->kmerlen) { // not enough coordinates - need to look at the next exon
+                cur_coords._push_back((uint32_t) (cur_exon.start + j), (uint32_t) cur_exon.end);
+                cur_len += ((cur_exon.end+1) - (cur_exon.start + j)); // save the length that has been seen thus far
+                break;
+            } else { // otherwise we have all the bases we need and can evaluate their uniqueness
+                if (cur_len != 0) { // some information is left from previous exons
+                    for (int g = this->kmerlen - cur_len; g < this->kmerlen; g++) { // build new sequences using past coordinates
+                        sub_seq = "";
+                        cur_coords._push_back((uint32_t) (cur_exon.start + j), (uint32_t) (cur_exon.start + j + g-1));
                         this->kmer_coords_exist = this->kmer_coords.insert(cur_coords);
-                        if (this->kmer_coords_exist.second) { // was successfully inserted
-                            // get sequence
-                            sub_seq = rec.seq_.substr(cur_exon.start + j - 1, this->kmerlen);
-                            if (sub_seq.length() > this->kmerlen) {
-                                std::cerr << "2: " << sub_seq.length() << " " << p_trans.getID() << " ";
+                        if (this->kmer_coords_exist.second) { // these coordinates have not been previously seen
+                            for (int d = 0; d < cur_coords._getSize(); d++) {
+                                sub_seq += rec.seq_.substr(cur_coords._getStart(d) - 1,
+                                                           (cur_coords._getEnd(d)+1) - cur_coords._getStart(d));
+                            }
+                            if (sub_seq.length() != this->kmerlen) {
+                                std::cerr << "1: " << j << " " << g << "\t" << sub_seq.length() << " "
+                                          << p_trans.getID() << std::endl;
                                 for (int y = 0; y < cur_coords._getSize(); y++) {
                                     std::cerr << cur_coords._getStart(y) << "-" << cur_coords._getEnd(y) << ";";
                                 }
@@ -260,15 +221,62 @@ void HDB::get_exonic_sequence(GffObj &p_trans, FastaRecord &rec, uint8_t contigI
                             this->trans_map._insert(std::string(rev_cur_kmer), cur_coords);
                             cur_coords.flipStrand(); // reset the strand information back
                             delete[] rev_cur_kmer;
-                            // add new coordinates here
+                        }
+                        cur_len -= 1;
+                        cur_coords._pop_back();
+                        cur_coords._incStart();
+                        if (cur_coords._getStart(0)-1 == cur_coords._getEnd(0)) {
+                            cur_coords._eraseFirst(); // delete the first element // need to test
+                        }
+                        if((length - j) + cur_len < this->kmerlen){ // check again, since we are decreasing the cur_len with each iteration, thus it is possible that the length may not be sufficient
+                            cur_coords._push_back((uint32_t) (cur_exon.start + j), (uint32_t) cur_exon.end);
+                            cur_len += ((cur_exon.end+1) - (cur_exon.start + j)); // save the length that has been seen thus far
+                            exhaustedExon=true; //set flag to exit from both for loops
+                            break;
                         }
                     }
-                    // since we went into this conditional, that means no previously encountered exons are left
-                    // and we can reset some things
-                    cur_coords._erase(); // need to test
-                    cur_coords = EVec(contigID, (uint8_t) p_trans.strand);
-                    cur_len = 0;
+                    if(exhaustedExon){
+                        exhaustedExon=false;
+                        break;
+                    }
+                    // add new coordinates first
                 }
+                // need to resume from the current index
+                if ((length - j) + cur_len < this->kmerlen) { // not enough coordinates - need to look at the next exon
+                    cur_coords._push_back((uint32_t) (cur_exon.start + j), (uint32_t) cur_exon.end);
+                    cur_len += ((cur_exon.end+1) - (cur_exon.start + j));
+                    break;
+                } else {
+                    cur_coords._push_back((uint32_t) (cur_exon.start + j),(uint32_t) (cur_exon.start + j + this->kmerlen));
+                    this->kmer_coords_exist = this->kmer_coords.insert(cur_coords);
+                    if (this->kmer_coords_exist.second) { // was successfully inserted
+                        // get sequence
+                        sub_seq = rec.seq_.substr((cur_exon.start + j) - 1, this->kmerlen);
+                        if (sub_seq.length() != this->kmerlen) {
+                            std::cerr << "2: " << sub_seq.length() << " " << p_trans.getID() << " ";
+                            for (int y = 0; y < cur_coords._getSize(); y++) {
+                                std::cerr << cur_coords._getStart(y) << "-" << cur_coords._getEnd(y) << ";";
+                            }
+                            std::cerr << std::endl;
+                        }
+                        std::transform(sub_seq.begin(), sub_seq.end(), sub_seq.begin(), ::toupper);
+                        this->trans_map._insert(sub_seq, cur_coords);
+                        // do reverse_complement
+                        char *rev_cur_kmer = new char[this->kmerlen];
+                        strcpy(rev_cur_kmer, sub_seq.c_str());
+                        reverseComplement(rev_cur_kmer, this->kmerlen);
+                        cur_coords.flipStrand(); // change strand information for the reverse complement
+                        this->trans_map._insert(std::string(rev_cur_kmer), cur_coords);
+                        cur_coords.flipStrand(); // reset the strand information back
+                        delete[] rev_cur_kmer;
+                        // add new coordinates here
+                    }
+                }
+                // since we went into this conditional, that means no previously encountered exons are left
+                // and we can reset some things
+                cur_coords._erase(); // need to test
+                cur_coords = EVec(contigID, (uint8_t) p_trans.strand);
+                cur_len = 0;
             }
         }
         exon_seq += rec.seq_.substr(cur_exon.start - 1, length);
@@ -458,15 +466,14 @@ void HDB::load_db(std::string db_fname_base){
     std::string contiginfo_fname(db_fname_base);
     contiginfo_fname.append("/contig.info");
 
-    //TODO: uncomment after a more reasonably sized database is configured
-//    std::ifstream trans_fp;
-//    trans_fp.open(trans_fname.c_str(),std::ios::in);
-//    if(!trans_fp.good()){
-//        std::cerr<<"FATAL: Couldn't open transcriptome kmer data: "<<trans_fname<<std::endl;
-//        exit(1);
-//    }
-//    HDB::load_trans_db(trans_fp);
-//    trans_fp.close();
+    std::ifstream trans_fp;
+    trans_fp.open(trans_fname.c_str(),std::ios::in);
+    if(!trans_fp.good()){
+        std::cerr<<"FATAL: Couldn't open transcriptome kmer data: "<<trans_fname<<std::endl;
+        exit(1);
+    }
+    HDB::load_trans_db(trans_fp);
+    trans_fp.close();
 
     std::ifstream genom_fp;
     genom_fp.open(genom_fname.c_str(),std::ios::in);
@@ -501,9 +508,9 @@ int HDB::getKmerLen() {
 }
 
 MinMap::iterator HDB::find_trans(std::string &kmer) {
-    return MinMap::iterator();
+    return this->trans_map._find(kmer);
 }
 
 HDB::GenMap::iterator HDB::find_genom(std::string& kmer){
-    return HDB::GenMap::iterator();
+    return this->genom_map.find(kmer);
 }

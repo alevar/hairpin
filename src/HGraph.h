@@ -12,6 +12,7 @@
 #include <boost/graph/adjacency_list.hpp>
 
 #include "HDB.h"
+#include "MinMap.h"
 
 class HGraph {
 public:
@@ -62,6 +63,9 @@ private:
         int numReadsIgnored=0;
         int kmerlen;
     } stats;
+
+    MinMap::iterator trans_it;
+    HDB::GenMap::iterator genom_it;
 
 };
 

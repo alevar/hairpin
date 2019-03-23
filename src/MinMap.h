@@ -143,6 +143,10 @@ public:
 
     typedef std::map<std::string,std::vector<EVec> > KmerMap;
 
+    KmerMap::iterator _find(std::string key){
+        return minmap.find(key);
+    }
+
     // this method inserts a new kmer if exists, or updates with a new kmer if does not exist
     KmerMap::iterator _insert(std::string key, uint8_t chrID,uint8_t strand){
         std::pair<KmerMap::iterator,bool> mm_it = minmap.insert(std::pair<std::string,std::vector<EVec>>(key,{}));

@@ -16,8 +16,43 @@ void process_reads_single(std::string readsFP, HGraph& hg){
 
     while (fastaReader.good()) {
         fastaReader.next(read);
-//        add_read(read.seq_, hdb);
+        hg.add_read(read.seq_);
     }
+}
+
+int hairpin_quant(int argc,char* argv[]){
+    enum Opt_Quant {HDB_FP= 'x',
+        OUTPUT= 'o',
+        READ1 = '1',
+        READ2 = '2',
+        UNPAIR= 'u',
+        REF   = 'r'};
+
+    ArgParse args_quant("hairpin_align");
+    args_quant.add_string(Opt_Quant::HDB_FP,"hdb","","");
+    args_quant.add_string(Opt_Quant::OUTPUT,"output","","");
+    args_quant.add_string(Opt_Quant::READ1,"input1","","");
+    args_quant.add_string(Opt_Quant::READ2,"input2","","");
+    args_quant.add_string(Opt_Quant::UNPAIR,"unpaired","","");
+    args_quant.add_string(Opt_Quant::REF,"reference","","");
+
+    args_quant.parse_args(argc,argv);
+
+    HDB hdb;
+    std::cout<<"Loading the database"<<std::endl;
+    hdb.load_db(args_quant.get_string(Opt_Quant::HDB_FP));
+
+    HGraph hg(&hdb);
+    std::cout<<"processing reads"<<std::endl;
+    process_reads_single(args_quant.get_string(Opt_Quant::UNPAIR),hg);
+//    print_stats();
+
+    // when parsing a read - need to set the minimum number of kmers that need ot be mapped from that read
+    // if fewer than n reads are mapped - remove any additions to the graph
+    // to do so efficiently - for each read keep pointer to each the node where a kmer has been inserted and the associated edges
+    // and remove them if fewer than n kmers have been matched from a read.
+
+    return 0;
 }
 
 int hairpin_build(int argc,char* argv[]){
@@ -39,39 +74,6 @@ int hairpin_build(int argc,char* argv[]){
     hdb.make_db(args_build.get_string(Opt_Build::HDB_FP), args_build.get_int(Opt_Build::KMERLEN));
     std::cout<<"saving the database:\t"<<std::endl;
     hdb.save_db();
-
-    return 0;
-}
-
-int hairpin_quant(int argc,char* argv[]){
-    enum Opt_Quant {HDB_FP   = 'x',
-                    OUTPUT= 'o',
-                    READ1 = '1',
-                    READ2 = '2',
-                    UNPAIR= 'u',
-                    REF   = 'r'};
-
-    ArgParse args_quant("hairpin_align");
-    args_quant.add_string(Opt_Quant::HDB_FP,"hdb","","");
-    args_quant.add_string(Opt_Quant::OUTPUT,"output","","");
-    args_quant.add_string(Opt_Quant::READ1,"input1","","");
-    args_quant.add_string(Opt_Quant::READ2,"input2","","");
-    args_quant.add_string(Opt_Quant::UNPAIR,"unpaired","","");
-    args_quant.add_string(Opt_Quant::REF,"reference","","");
-
-    args_quant.parse_args(argc,argv);
-
-    HDB hdb;
-    hdb.load_db(args_quant.get_string(Opt_Quant::HDB_FP));
-
-    HGraph hg(&hdb);
-    process_reads_single(args_quant.get_string(Opt_Quant::UNPAIR),hg);
-//    print_stats();
-
-    // when parsing a read - need to set the minimum number of kmers that need ot be mapped from that read
-    // if fewer than n reads are mapped - remove any additions to the graph
-    // to do so efficiently - for each read keep pointer to each the node where a kmer has been inserted and the associated edges
-    // and remove them if fewer than n kmers have been matched from a read.
 
     return 0;
 }

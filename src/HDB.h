@@ -47,6 +47,21 @@ public:
     MinMap::iterator find_trans(std::string& kmer);
     GenMap::iterator find_genom(std::string& kmer);
 
+    typedef GenMap::iterator genom_iterator;
+    typedef GenMap::const_iterator const_genom_iterator;
+    typedef GenMap::reference genom_reference;
+    genom_iterator genom_begin() {return genom_map.begin();}
+    const_genom_iterator genom_begin() const { return genom_map.begin();}
+    genom_iterator genom_end() {return genom_map.end();}
+    const_genom_iterator genom_end() const { return genom_map.end();}
+
+    typedef MinMap::iterator trans_iterator;
+    typedef MinMap::const_iterator const_trans_iterator;
+    typedef MinMap::reference trans_reference;
+    trans_iterator trans_begin() {return trans_map.begin();}
+    const_trans_iterator trans_begin() const { return trans_map.begin();}
+    trans_iterator trans_end() {return trans_map.end();}
+    const_trans_iterator trans_end() const { return trans_map.end();}
 
     void save_db();
     void load_db(std::string fb_fname_base);
