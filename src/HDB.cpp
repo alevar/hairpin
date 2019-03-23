@@ -328,6 +328,7 @@ void HDB::save_genom_db(){
 
     for(auto it: this->genom_map){
         genom_fp<<it.first<<'\t';
+        sort(it.second.begin(),it.second.end());
         for(auto vit: it.second) {
             std::tie(chrID,strand,pos) = vit;
             genom_fp << (int) chrID << ":" << (int) strand << "@" << pos<<";";

@@ -31,6 +31,7 @@ void HGraph::add_read(std::string &read) {
         this->trans_it=this->hdb->find_trans(kmer);
         if(this->trans_it!=this->hdb->trans_end()){ // match to transcriptome found
 //            std::cout<<kmer<<"\t"<<this->trans_it->first<<"\t"<<this->trans_it->second[0]._getStart(0)<<std::endl;
+
         }
         else{ // search in the genom map
             this->genom_it=this->hdb->find_genom(kmer);

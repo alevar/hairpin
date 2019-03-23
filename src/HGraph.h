@@ -36,6 +36,7 @@ private:
     };
     struct Edge{
         uint16_t weight; // might have to be uint32_t
+        bool known; //whether the edge was inesrted based on the transcriptomic match
     };
 
     //Define the graph using those classes
@@ -47,10 +48,10 @@ private:
     Graph graph;
 
     // Example code for adding vertices and edges to the graph
-//    vertex_t u = boost::add_vertex(g);
-//    vertex_t v = boost::add_vertex(g);
+//    Vertex u = boost::add_vertex(g);
+//    Vertex v = boost::add_vertex(g);
 //    // Create an edge conecting those two vertices
-//    edge_t e; bool b;
+//    Edge e; bool b;
 //    boost::tie(e,b) = boost::add_edge(u,v,g);
 //    // Set the properties of a vertex and the edge
 //    g[u].foo = 42;

@@ -203,6 +203,7 @@ public:
     friend std::ostream& operator<<(std::ostream& os, const MinMap& mm){
         for(auto it_mm: mm){
             os<<it_mm.first<<"\t";
+            std::sort(it_mm.second.begin(), it_mm.second.end());
             for(auto it_ev: it_mm.second){
                 os<<it_ev<<";";
             }
