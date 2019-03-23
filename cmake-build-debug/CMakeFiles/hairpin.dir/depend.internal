@@ -43,8 +43,19 @@ CMakeFiles/hairpin.dir/src/HDB.cpp.o
  /home/sparrow/JHU/hairpin/src/gdna.h
  /home/sparrow/JHU/hairpin/src/gff.h
 CMakeFiles/hairpin.dir/src/HGraph.cpp.o
+ /home/sparrow/JHU/hairpin/src/FastaTools.h
+ /home/sparrow/JHU/hairpin/src/GBase.h
+ /home/sparrow/JHU/hairpin/src/GFaSeqGet.h
+ /home/sparrow/JHU/hairpin/src/GHash.hh
+ /home/sparrow/JHU/hairpin/src/GList.hh
+ /home/sparrow/JHU/hairpin/src/GVec.hh
+ /home/sparrow/JHU/hairpin/src/HDB.h
  /home/sparrow/JHU/hairpin/src/HGraph.cpp
  /home/sparrow/JHU/hairpin/src/HGraph.h
+ /home/sparrow/JHU/hairpin/src/MinMap.h
+ /home/sparrow/JHU/hairpin/src/codons.h
+ /home/sparrow/JHU/hairpin/src/gdna.h
+ /home/sparrow/JHU/hairpin/src/gff.h
 CMakeFiles/hairpin.dir/src/MinMap.cpp.o
  /home/sparrow/JHU/hairpin/src/MinMap.cpp
  /home/sparrow/JHU/hairpin/src/MinMap.h

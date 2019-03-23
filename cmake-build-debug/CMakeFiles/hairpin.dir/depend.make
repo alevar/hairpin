@@ -42,8 +42,19 @@ CMakeFiles/hairpin.dir/src/HDB.cpp.o: ../src/codons.h
 CMakeFiles/hairpin.dir/src/HDB.cpp.o: ../src/gdna.h
 CMakeFiles/hairpin.dir/src/HDB.cpp.o: ../src/gff.h
 
+CMakeFiles/hairpin.dir/src/HGraph.cpp.o: ../src/FastaTools.h
+CMakeFiles/hairpin.dir/src/HGraph.cpp.o: ../src/GBase.h
+CMakeFiles/hairpin.dir/src/HGraph.cpp.o: ../src/GFaSeqGet.h
+CMakeFiles/hairpin.dir/src/HGraph.cpp.o: ../src/GHash.hh
+CMakeFiles/hairpin.dir/src/HGraph.cpp.o: ../src/GList.hh
+CMakeFiles/hairpin.dir/src/HGraph.cpp.o: ../src/GVec.hh
+CMakeFiles/hairpin.dir/src/HGraph.cpp.o: ../src/HDB.h
 CMakeFiles/hairpin.dir/src/HGraph.cpp.o: ../src/HGraph.cpp
 CMakeFiles/hairpin.dir/src/HGraph.cpp.o: ../src/HGraph.h
+CMakeFiles/hairpin.dir/src/HGraph.cpp.o: ../src/MinMap.h
+CMakeFiles/hairpin.dir/src/HGraph.cpp.o: ../src/codons.h
+CMakeFiles/hairpin.dir/src/HGraph.cpp.o: ../src/gdna.h
+CMakeFiles/hairpin.dir/src/HGraph.cpp.o: ../src/gff.h
 
 CMakeFiles/hairpin.dir/src/MinMap.cpp.o: ../src/MinMap.cpp
 CMakeFiles/hairpin.dir/src/MinMap.cpp.o: ../src/MinMap.h

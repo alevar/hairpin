@@ -495,3 +495,15 @@ void HDB::load_db(std::string db_fname_base){
     HDB::load_contig_info(contiginfo_fp);
     contiginfo_fp.close();
 }
+
+int HDB::getKmerLen() {
+    return this->kmerlen;
+}
+
+MinMap::iterator HDB::find_trans(std::string &kmer) {
+    return MinMap::iterator();
+}
+
+HDB::GenMap::iterator HDB::find_genom(std::string& kmer){
+    return HDB::GenMap::iterator();
+}

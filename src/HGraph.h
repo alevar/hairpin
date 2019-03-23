@@ -11,12 +11,21 @@
 #include <iostream>
 #include <boost/graph/adjacency_list.hpp>
 
+#include "HDB.h"
+
 class HGraph {
 public:
     HGraph();
+    explicit HGraph(HDB* hdb);
     ~HGraph();
 
     void add_read(std::string& read);
+    void print_stats();
+
+    void to_sam(std::string out_sam_fname);
+    void sort_graph();
+    void parse_graph();
+
 private:
     struct Vertex{
         uint32_t start; // start position of the current vertex
@@ -45,6 +54,15 @@ private:
 //    // Set the properties of a vertex and the edge
 //    g[u].foo = 42;
 //    g[e].blah = "Hello world";
+
+    HDB* hdb;
+
+    struct Stats{
+        int numReads=0;
+        int numReadsIgnored=0;
+        int kmerlen;
+    } stats;
+
 };
 
 

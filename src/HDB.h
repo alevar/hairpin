@@ -41,8 +41,17 @@ public:
 
     void make_db(std::string out_fname, int kmerlen);
 
+    typedef std::vector<std::tuple<uint8_t,uint8_t,uint32_t>> GenVec;
+    typedef std::map<std::string,GenVec> GenMap;
+
+    MinMap::iterator find_trans(std::string& kmer);
+    GenMap::iterator find_genom(std::string& kmer);
+
+
     void save_db();
     void load_db(std::string fb_fname_base);
+
+    int getKmerLen();
 
     // TODO: method to find all coordinates of a kmer - needs to first search in the transcriptomic map and then in genomic and return all coordinates
 
@@ -70,8 +79,6 @@ private:
     void process_kmers(MinMap& mm); // process individual kmers
 
     MinMap trans_map;
-    typedef std::vector<std::tuple<uint8_t,uint8_t,uint32_t>> GenVec;
-    typedef std::map<std::string,GenVec> GenMap;
     GenMap genom_map;
     std::pair<GenMap::iterator,bool> genom_map_it;
     MinMap::KmerMap::iterator trans_map_it;

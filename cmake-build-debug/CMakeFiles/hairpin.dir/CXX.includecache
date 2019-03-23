@@ -86,6 +86,10 @@ GVec.hh
 GBase.h
 /home/sparrow/JHU/hairpin/src/GBase.h
 
+/home/sparrow/JHU/hairpin/src/HDB.cpp
+HDB.h
+/home/sparrow/JHU/hairpin/src/HDB.h
+
 /home/sparrow/JHU/hairpin/src/HDB.h
 config.h
 -
@@ -126,11 +130,17 @@ MinMap.h
 gdna.h
 /home/sparrow/JHU/hairpin/src/gdna.h
 
+/home/sparrow/JHU/hairpin/src/HGraph.cpp
+HGraph.h
+/home/sparrow/JHU/hairpin/src/HGraph.h
+
 /home/sparrow/JHU/hairpin/src/HGraph.h
 iostream
 -
 boost/graph/adjacency_list.hpp
 -
+HDB.h
+/home/sparrow/JHU/hairpin/src/HDB.h
 
 /home/sparrow/JHU/hairpin/src/MinMap.h
 cassert
