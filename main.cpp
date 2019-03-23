@@ -57,7 +57,7 @@ int hairpin_quant(int argc,char* argv[]){
     args_quant.add_string(Opt_Quant::READ1,"input1","","");
     args_quant.add_string(Opt_Quant::READ2,"input2","","");
     args_quant.add_string(Opt_Quant::UNPAIR,"unpaired","","");
-    args_quant.add_string(Opt_Quant::REF,"reference","","")
+    args_quant.add_string(Opt_Quant::REF,"reference","","");
 
     args_quant.parse_args(argc,argv);
 
