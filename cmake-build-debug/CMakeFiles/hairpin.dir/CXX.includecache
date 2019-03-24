@@ -6,6 +6,20 @@
 
 #IncludeRegexTransform: 
 
+/home/sparrow/JHU/hairpin/main.cpp
+iostream
+-
+string
+-
+cstring
+-
+src/arg_parse.h
+/home/sparrow/JHU/hairpin/src/arg_parse.h
+src/HDB.h
+/home/sparrow/JHU/hairpin/src/HDB.h
+src/HGraph.h
+/home/sparrow/JHU/hairpin/src/HGraph.h
+
 /home/sparrow/JHU/hairpin/src/FastaTools.h
 config.h
 -
@@ -72,10 +86,6 @@ GVec.hh
 GBase.h
 /home/sparrow/JHU/hairpin/src/GBase.h
 
-/home/sparrow/JHU/hairpin/src/HDB.cpp
-HDB.h
-/home/sparrow/JHU/hairpin/src/HDB.h
-
 /home/sparrow/JHU/hairpin/src/HDB.h
 config.h
 -
@@ -116,6 +126,18 @@ MinMap.h
 gdna.h
 /home/sparrow/JHU/hairpin/src/gdna.h
 
+/home/sparrow/JHU/hairpin/src/HGraph.h
+iostream
+-
+fstream
+-
+set
+-
+HDB.h
+/home/sparrow/JHU/hairpin/src/HDB.h
+MinMap.h
+/home/sparrow/JHU/hairpin/src/MinMap.h
+
 /home/sparrow/JHU/hairpin/src/MinMap.h
 cassert
 -
@@ -142,6 +164,12 @@ unordered_map
 set
 -
 algorithm
+-
+
+/home/sparrow/JHU/hairpin/src/arg_parse.h
+string
+-
+map
 -
 
 /home/sparrow/JHU/hairpin/src/codons.h
