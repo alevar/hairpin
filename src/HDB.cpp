@@ -7,20 +7,20 @@
 HDB::HDB() = default;
 
 HDB::HDB(std::string gtf_fname, std::string genome_fname){
-    gtf_fname_ = gtf_fname;
-    gtf_fhandle_ = fopen(gtf_fname_.c_str(), "r");
+    this->gtf_fname_ = gtf_fname;
+    this->gtf_fhandle_ = fopen(this->gtf_fname_.c_str(), "r");
     if (gtf_fhandle_ == nullptr){
-        std::cerr << "FATAL: Couldn't open annotation: " << gtf_fname_<< std::endl;
+        std::cerr << "FATAL: Couldn't open annotation: " << this->gtf_fname_<< std::endl;
         exit(1);
     }
-    std::cout << "Reading the annotation file: " << gtf_fname_ << std::endl;
-    gtfReader_.init(gtf_fhandle_, true); //load recognizable transcript features only
-    gtfReader_.readAll();
+    std::cout << "Reading the annotation file: " << this->gtf_fname_ << std::endl;
+    this->gtfReader_.init(this->gtf_fhandle_, true); //load recognizable transcript features only
+    this->gtfReader_.readAll();
 
-    genome_fname_ = genome_fname;
+    this->genome_fname_ = genome_fname;
 
     // Make a map from the GffObj
-    transcript_map();
+    this->transcript_map();
 }
 
 HDB::~HDB(){
@@ -29,6 +29,28 @@ HDB::~HDB(){
     for (it = contigTransMap_.begin(); it != contigTransMap_.end(); ++it) {
         delete it->second;
     }
+}
+
+void HDB::init(std::string genome_fname){
+    this->genome_fname_ = genome_fname;
+    this->transcriptomeBuild=false;
+}
+
+void HDB::init(std::string gtf_fname, std::string genome_fname){
+    this->gtf_fname_ = gtf_fname;
+    this->gtf_fhandle_ = fopen(this->gtf_fname_.c_str(), "r");
+    if (gtf_fhandle_ == nullptr){
+        std::cerr << "FATAL: Couldn't open annotation: " << this->gtf_fname_<< std::endl;
+        exit(1);
+    }
+    std::cout << "Reading the annotation file: " << this->gtf_fname_ << std::endl;
+    this->gtfReader_.init(this->gtf_fhandle_, true); //load recognizable transcript features only
+    this->gtfReader_.readAll();
+
+    this->genome_fname_ = genome_fname;
+
+    // Make a map from the GffObj
+    this->transcript_map();
 }
 
 void HDB::transcript_map(){
@@ -89,7 +111,7 @@ void HDB::make_db(std::string out_fname, int kmerlen) {
         uint8_t contigID = this->contig_exists.first->second; //this is the id of the new contig
 
         // now proceed to safelly process the information from the contig
-        if (contigTransMap_.find(cur_contig.id_) == contigTransMap_.end()){ // no transcript found on this contig - just add to the genomic map
+        if (contigTransMap_.find(cur_contig.id_) == contigTransMap_.end() || !this->transcriptomeBuild){ // no transcript found on this contig or just the genome index requested - just add to the genomic map
             HDB::process_contig(cur_contig.seq_,contigID,'+','-', false);
         }
         else{
@@ -446,7 +468,10 @@ void HDB::load_contig_info(std::ifstream& stream){
 }
 
 void HDB::save_db(){
-    HDB::save_trans_db();
+    if(this->transcriptomeBuild){
+        std::cout<<"saving transcriptome"<<std::endl;
+        HDB::save_trans_db();
+    }
     HDB::save_genom_db();
     HDB::save_db_info();
     HDB::save_contig_info();
@@ -470,10 +495,11 @@ void HDB::load_db(std::string db_fname_base){
     std::ifstream trans_fp;
     trans_fp.open(trans_fname.c_str(),std::ios::in);
     if(!trans_fp.good()){
-        std::cerr<<"FATAL: Couldn't open transcriptome kmer data: "<<trans_fname<<std::endl;
-        exit(1);
+        this->transcriptomeBuild=false;
     }
-    HDB::load_trans_db(trans_fp);
+    if(this->transcriptomeBuild){
+        HDB::load_trans_db(trans_fp);
+    }
     trans_fp.close();
 
     std::ifstream genom_fp;

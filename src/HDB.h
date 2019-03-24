@@ -39,6 +39,9 @@ public:
     HDB();
     ~HDB();
 
+    void init(std::string genome_fname);
+    void init(std::string gtf_fname,std::string genome_fname);
+
     void make_db(std::string out_fname, int kmerlen);
 
     typedef std::vector<std::tuple<uint8_t,uint8_t,uint32_t>> GenVec;
@@ -71,6 +74,7 @@ public:
     // TODO: method to find all coordinates of a kmer - needs to first search in the transcriptomic map and then in genomic and return all coordinates
 
 private:
+    bool transcriptomeBuild=true; // whether a transcriptome index is requested
     GffReader gtfReader_;
 
     std::string gtf_fname_;

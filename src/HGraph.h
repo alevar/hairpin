@@ -9,10 +9,51 @@
 #define HAIRPIN_GRAPH_H
 
 #include <iostream>
-#include <boost/graph/adjacency_list.hpp>
+#include <fstream>
+#include <set>
 
 #include "HDB.h"
 #include "MinMap.h"
+
+class Vertex;
+
+class Edge{
+public:
+    Edge()=default;
+
+    Vertex* getOrigin() {return origin;}
+    Vertex* getDestination() {return destination;}
+
+private:
+    Vertex* origin;
+    Vertex* destination;
+    bool known{}; // set to true if the edge is based on the transcriptome
+    bool weight=0; // number of reads supporting the edge
+};
+
+class Vertex{
+public:
+    Vertex() = default;
+    explicit Vertex(EVec * coords){
+        this->coordinates=coords;
+        this->weight=1;
+    }
+    ~Vertex()=default;
+
+    void addEdge(Vertex *v){
+
+    }
+
+    // TODO: comparison operator so that verticies can be stored in a set
+    //
+
+    int getWeight() {return this->weight;}
+
+private:
+    EVec* coordinates{};
+    int weight=0;
+    std::vector<Edge> edges{};
+};
 
 class HGraph {
 public:
@@ -28,34 +69,6 @@ public:
     void parse_graph();
 
 private:
-    struct Vertex{
-        uint32_t start; // start position of the current vertex
-        uint8_t length; // number of bases covered by the current node
-        uint8_t chrID;
-        uint8_t strand;
-    };
-    struct Edge{
-        uint16_t weight; // might have to be uint32_t
-        bool known; //whether the edge was inesrted based on the transcriptomic match
-    };
-
-    //Define the graph using those classes
-    typedef boost::adjacency_list<boost::listS, boost::vecS, boost::directedS, Vertex, Edge > Graph;
-    //Some typedefs for simplicity
-    typedef boost::graph_traits<Graph>::vertex_descriptor vertex_t;
-    typedef boost::graph_traits<Graph>::edge_descriptor edge_t;
-
-    Graph graph;
-
-    // Example code for adding vertices and edges to the graph
-//    Vertex u = boost::add_vertex(g);
-//    Vertex v = boost::add_vertex(g);
-//    // Create an edge conecting those two vertices
-//    Edge e; bool b;
-//    boost::tie(e,b) = boost::add_edge(u,v,g);
-//    // Set the properties of a vertex and the edge
-//    g[u].foo = 42;
-//    g[e].blah = "Hello world";
 
     HDB* hdb;
 
@@ -67,6 +80,10 @@ private:
 
     MinMap::iterator trans_it;
     HDB::GenMap::iterator genom_it;
+
+    // below are graph declarations
+    std::set<Vertex> verices;
+    std::set<Edge> edges;
 
 };
 

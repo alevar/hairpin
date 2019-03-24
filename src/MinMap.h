@@ -36,6 +36,7 @@ public:
 
     uint32_t getStart(){return this->start;}
     uint32_t getEnd(){return this->end;}
+    uint8_t getLength(){return static_cast<uint8_t>(this->end - this->start);}
     void incStart(){this->start++;}
 
     friend std::ostream& operator<<(std::ostream& os, const EPair& ep){
@@ -84,6 +85,7 @@ public:
     int _getSize(){return this->size;}
     uint32_t _getStart(int pos){return this->coords[pos].getStart();}
     uint32_t _getEnd(int pos){return this->coords[pos].getEnd();}
+    uint8_t _getLength(int pos){return this->coords[pos].getLength();}
     void _incStart(){this->coords[0].incStart();}
     void _eraseFirst(){
         this->coords.erase(this->coords.begin());

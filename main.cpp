@@ -45,7 +45,7 @@ int hairpin_quant(int argc,char* argv[]){
     HGraph hg(&hdb);
     std::cout<<"processing reads"<<std::endl;
     process_reads_single(args_quant.get_string(Opt_Quant::UNPAIR),hg);
-//    print_stats();
+    hg.print_stats();
 
     // when parsing a read - need to set the minimum number of kmers that need ot be mapped from that read
     // if fewer than n reads are mapped - remove any additions to the graph
@@ -69,7 +69,13 @@ int hairpin_build(int argc,char* argv[]){
 
     args_build.parse_args(argc,argv);
 
-    HDB hdb(args_build.get_string(Opt_Build::GFF),args_build.get_string(Opt_Build::REF));
+    HDB hdb;
+    if(args_build.get_string(Opt_Build::GFF).length()==0){
+        hdb.init(args_build.get_string(Opt_Build::REF));
+    }
+    else {
+        hdb.init(args_build.get_string(Opt_Build::GFF), args_build.get_string(Opt_Build::REF));
+    }
     std::cout<<"building the database:\t"<<std::endl;
     hdb.make_db(args_build.get_string(Opt_Build::HDB_FP), args_build.get_int(Opt_Build::KMERLEN));
     std::cout<<"saving the database:\t"<<std::endl;
