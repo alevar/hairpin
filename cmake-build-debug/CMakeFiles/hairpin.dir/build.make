@@ -60,158 +60,158 @@ include CMakeFiles/hairpin.dir/flags.make
 CMakeFiles/hairpin.dir/main.cpp.o: CMakeFiles/hairpin.dir/flags.make
 CMakeFiles/hairpin.dir/main.cpp.o: ../main.cpp
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/sparrow/JHU/hairpin/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/hairpin.dir/main.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/hairpin.dir/main.cpp.o -c /home/sparrow/JHU/hairpin/main.cpp
+	/usr/bin/g++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/hairpin.dir/main.cpp.o -c /home/sparrow/JHU/hairpin/main.cpp
 
 CMakeFiles/hairpin.dir/main.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/hairpin.dir/main.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/sparrow/JHU/hairpin/main.cpp > CMakeFiles/hairpin.dir/main.cpp.i
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/sparrow/JHU/hairpin/main.cpp > CMakeFiles/hairpin.dir/main.cpp.i
 
 CMakeFiles/hairpin.dir/main.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/hairpin.dir/main.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/sparrow/JHU/hairpin/main.cpp -o CMakeFiles/hairpin.dir/main.cpp.s
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/sparrow/JHU/hairpin/main.cpp -o CMakeFiles/hairpin.dir/main.cpp.s
 
 CMakeFiles/hairpin.dir/src/HGraph.cpp.o: CMakeFiles/hairpin.dir/flags.make
 CMakeFiles/hairpin.dir/src/HGraph.cpp.o: ../src/HGraph.cpp
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/sparrow/JHU/hairpin/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/hairpin.dir/src/HGraph.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/hairpin.dir/src/HGraph.cpp.o -c /home/sparrow/JHU/hairpin/src/HGraph.cpp
+	/usr/bin/g++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/hairpin.dir/src/HGraph.cpp.o -c /home/sparrow/JHU/hairpin/src/HGraph.cpp
 
 CMakeFiles/hairpin.dir/src/HGraph.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/hairpin.dir/src/HGraph.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/sparrow/JHU/hairpin/src/HGraph.cpp > CMakeFiles/hairpin.dir/src/HGraph.cpp.i
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/sparrow/JHU/hairpin/src/HGraph.cpp > CMakeFiles/hairpin.dir/src/HGraph.cpp.i
 
 CMakeFiles/hairpin.dir/src/HGraph.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/hairpin.dir/src/HGraph.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/sparrow/JHU/hairpin/src/HGraph.cpp -o CMakeFiles/hairpin.dir/src/HGraph.cpp.s
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/sparrow/JHU/hairpin/src/HGraph.cpp -o CMakeFiles/hairpin.dir/src/HGraph.cpp.s
 
 CMakeFiles/hairpin.dir/src/HDB.cpp.o: CMakeFiles/hairpin.dir/flags.make
 CMakeFiles/hairpin.dir/src/HDB.cpp.o: ../src/HDB.cpp
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/sparrow/JHU/hairpin/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/hairpin.dir/src/HDB.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/hairpin.dir/src/HDB.cpp.o -c /home/sparrow/JHU/hairpin/src/HDB.cpp
+	/usr/bin/g++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/hairpin.dir/src/HDB.cpp.o -c /home/sparrow/JHU/hairpin/src/HDB.cpp
 
 CMakeFiles/hairpin.dir/src/HDB.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/hairpin.dir/src/HDB.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/sparrow/JHU/hairpin/src/HDB.cpp > CMakeFiles/hairpin.dir/src/HDB.cpp.i
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/sparrow/JHU/hairpin/src/HDB.cpp > CMakeFiles/hairpin.dir/src/HDB.cpp.i
 
 CMakeFiles/hairpin.dir/src/HDB.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/hairpin.dir/src/HDB.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/sparrow/JHU/hairpin/src/HDB.cpp -o CMakeFiles/hairpin.dir/src/HDB.cpp.s
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/sparrow/JHU/hairpin/src/HDB.cpp -o CMakeFiles/hairpin.dir/src/HDB.cpp.s
 
 CMakeFiles/hairpin.dir/src/MinMap.cpp.o: CMakeFiles/hairpin.dir/flags.make
 CMakeFiles/hairpin.dir/src/MinMap.cpp.o: ../src/MinMap.cpp
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/sparrow/JHU/hairpin/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/hairpin.dir/src/MinMap.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/hairpin.dir/src/MinMap.cpp.o -c /home/sparrow/JHU/hairpin/src/MinMap.cpp
+	/usr/bin/g++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/hairpin.dir/src/MinMap.cpp.o -c /home/sparrow/JHU/hairpin/src/MinMap.cpp
 
 CMakeFiles/hairpin.dir/src/MinMap.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/hairpin.dir/src/MinMap.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/sparrow/JHU/hairpin/src/MinMap.cpp > CMakeFiles/hairpin.dir/src/MinMap.cpp.i
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/sparrow/JHU/hairpin/src/MinMap.cpp > CMakeFiles/hairpin.dir/src/MinMap.cpp.i
 
 CMakeFiles/hairpin.dir/src/MinMap.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/hairpin.dir/src/MinMap.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/sparrow/JHU/hairpin/src/MinMap.cpp -o CMakeFiles/hairpin.dir/src/MinMap.cpp.s
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/sparrow/JHU/hairpin/src/MinMap.cpp -o CMakeFiles/hairpin.dir/src/MinMap.cpp.s
 
 CMakeFiles/hairpin.dir/src/arg_parse.cpp.o: CMakeFiles/hairpin.dir/flags.make
 CMakeFiles/hairpin.dir/src/arg_parse.cpp.o: ../src/arg_parse.cpp
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/sparrow/JHU/hairpin/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/hairpin.dir/src/arg_parse.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/hairpin.dir/src/arg_parse.cpp.o -c /home/sparrow/JHU/hairpin/src/arg_parse.cpp
+	/usr/bin/g++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/hairpin.dir/src/arg_parse.cpp.o -c /home/sparrow/JHU/hairpin/src/arg_parse.cpp
 
 CMakeFiles/hairpin.dir/src/arg_parse.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/hairpin.dir/src/arg_parse.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/sparrow/JHU/hairpin/src/arg_parse.cpp > CMakeFiles/hairpin.dir/src/arg_parse.cpp.i
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/sparrow/JHU/hairpin/src/arg_parse.cpp > CMakeFiles/hairpin.dir/src/arg_parse.cpp.i
 
 CMakeFiles/hairpin.dir/src/arg_parse.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/hairpin.dir/src/arg_parse.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/sparrow/JHU/hairpin/src/arg_parse.cpp -o CMakeFiles/hairpin.dir/src/arg_parse.cpp.s
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/sparrow/JHU/hairpin/src/arg_parse.cpp -o CMakeFiles/hairpin.dir/src/arg_parse.cpp.s
 
 CMakeFiles/hairpin.dir/src/codons.cpp.o: CMakeFiles/hairpin.dir/flags.make
 CMakeFiles/hairpin.dir/src/codons.cpp.o: ../src/codons.cpp
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/sparrow/JHU/hairpin/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/hairpin.dir/src/codons.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/hairpin.dir/src/codons.cpp.o -c /home/sparrow/JHU/hairpin/src/codons.cpp
+	/usr/bin/g++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/hairpin.dir/src/codons.cpp.o -c /home/sparrow/JHU/hairpin/src/codons.cpp
 
 CMakeFiles/hairpin.dir/src/codons.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/hairpin.dir/src/codons.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/sparrow/JHU/hairpin/src/codons.cpp > CMakeFiles/hairpin.dir/src/codons.cpp.i
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/sparrow/JHU/hairpin/src/codons.cpp > CMakeFiles/hairpin.dir/src/codons.cpp.i
 
 CMakeFiles/hairpin.dir/src/codons.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/hairpin.dir/src/codons.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/sparrow/JHU/hairpin/src/codons.cpp -o CMakeFiles/hairpin.dir/src/codons.cpp.s
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/sparrow/JHU/hairpin/src/codons.cpp -o CMakeFiles/hairpin.dir/src/codons.cpp.s
 
 CMakeFiles/hairpin.dir/src/FastaTools.cpp.o: CMakeFiles/hairpin.dir/flags.make
 CMakeFiles/hairpin.dir/src/FastaTools.cpp.o: ../src/FastaTools.cpp
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/sparrow/JHU/hairpin/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/hairpin.dir/src/FastaTools.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/hairpin.dir/src/FastaTools.cpp.o -c /home/sparrow/JHU/hairpin/src/FastaTools.cpp
+	/usr/bin/g++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/hairpin.dir/src/FastaTools.cpp.o -c /home/sparrow/JHU/hairpin/src/FastaTools.cpp
 
 CMakeFiles/hairpin.dir/src/FastaTools.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/hairpin.dir/src/FastaTools.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/sparrow/JHU/hairpin/src/FastaTools.cpp > CMakeFiles/hairpin.dir/src/FastaTools.cpp.i
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/sparrow/JHU/hairpin/src/FastaTools.cpp > CMakeFiles/hairpin.dir/src/FastaTools.cpp.i
 
 CMakeFiles/hairpin.dir/src/FastaTools.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/hairpin.dir/src/FastaTools.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/sparrow/JHU/hairpin/src/FastaTools.cpp -o CMakeFiles/hairpin.dir/src/FastaTools.cpp.s
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/sparrow/JHU/hairpin/src/FastaTools.cpp -o CMakeFiles/hairpin.dir/src/FastaTools.cpp.s
 
 CMakeFiles/hairpin.dir/src/GBase.cpp.o: CMakeFiles/hairpin.dir/flags.make
 CMakeFiles/hairpin.dir/src/GBase.cpp.o: ../src/GBase.cpp
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/sparrow/JHU/hairpin/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/hairpin.dir/src/GBase.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/hairpin.dir/src/GBase.cpp.o -c /home/sparrow/JHU/hairpin/src/GBase.cpp
+	/usr/bin/g++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/hairpin.dir/src/GBase.cpp.o -c /home/sparrow/JHU/hairpin/src/GBase.cpp
 
 CMakeFiles/hairpin.dir/src/GBase.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/hairpin.dir/src/GBase.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/sparrow/JHU/hairpin/src/GBase.cpp > CMakeFiles/hairpin.dir/src/GBase.cpp.i
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/sparrow/JHU/hairpin/src/GBase.cpp > CMakeFiles/hairpin.dir/src/GBase.cpp.i
 
 CMakeFiles/hairpin.dir/src/GBase.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/hairpin.dir/src/GBase.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/sparrow/JHU/hairpin/src/GBase.cpp -o CMakeFiles/hairpin.dir/src/GBase.cpp.s
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/sparrow/JHU/hairpin/src/GBase.cpp -o CMakeFiles/hairpin.dir/src/GBase.cpp.s
 
 CMakeFiles/hairpin.dir/src/gdna.cpp.o: CMakeFiles/hairpin.dir/flags.make
 CMakeFiles/hairpin.dir/src/gdna.cpp.o: ../src/gdna.cpp
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/sparrow/JHU/hairpin/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/hairpin.dir/src/gdna.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/hairpin.dir/src/gdna.cpp.o -c /home/sparrow/JHU/hairpin/src/gdna.cpp
+	/usr/bin/g++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/hairpin.dir/src/gdna.cpp.o -c /home/sparrow/JHU/hairpin/src/gdna.cpp
 
 CMakeFiles/hairpin.dir/src/gdna.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/hairpin.dir/src/gdna.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/sparrow/JHU/hairpin/src/gdna.cpp > CMakeFiles/hairpin.dir/src/gdna.cpp.i
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/sparrow/JHU/hairpin/src/gdna.cpp > CMakeFiles/hairpin.dir/src/gdna.cpp.i
 
 CMakeFiles/hairpin.dir/src/gdna.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/hairpin.dir/src/gdna.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/sparrow/JHU/hairpin/src/gdna.cpp -o CMakeFiles/hairpin.dir/src/gdna.cpp.s
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/sparrow/JHU/hairpin/src/gdna.cpp -o CMakeFiles/hairpin.dir/src/gdna.cpp.s
 
 CMakeFiles/hairpin.dir/src/GFaSeqGet.cpp.o: CMakeFiles/hairpin.dir/flags.make
 CMakeFiles/hairpin.dir/src/GFaSeqGet.cpp.o: ../src/GFaSeqGet.cpp
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/sparrow/JHU/hairpin/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/hairpin.dir/src/GFaSeqGet.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/hairpin.dir/src/GFaSeqGet.cpp.o -c /home/sparrow/JHU/hairpin/src/GFaSeqGet.cpp
+	/usr/bin/g++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/hairpin.dir/src/GFaSeqGet.cpp.o -c /home/sparrow/JHU/hairpin/src/GFaSeqGet.cpp
 
 CMakeFiles/hairpin.dir/src/GFaSeqGet.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/hairpin.dir/src/GFaSeqGet.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/sparrow/JHU/hairpin/src/GFaSeqGet.cpp > CMakeFiles/hairpin.dir/src/GFaSeqGet.cpp.i
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/sparrow/JHU/hairpin/src/GFaSeqGet.cpp > CMakeFiles/hairpin.dir/src/GFaSeqGet.cpp.i
 
 CMakeFiles/hairpin.dir/src/GFaSeqGet.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/hairpin.dir/src/GFaSeqGet.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/sparrow/JHU/hairpin/src/GFaSeqGet.cpp -o CMakeFiles/hairpin.dir/src/GFaSeqGet.cpp.s
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/sparrow/JHU/hairpin/src/GFaSeqGet.cpp -o CMakeFiles/hairpin.dir/src/GFaSeqGet.cpp.s
 
 CMakeFiles/hairpin.dir/src/gff.cpp.o: CMakeFiles/hairpin.dir/flags.make
 CMakeFiles/hairpin.dir/src/gff.cpp.o: ../src/gff.cpp
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/sparrow/JHU/hairpin/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object CMakeFiles/hairpin.dir/src/gff.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/hairpin.dir/src/gff.cpp.o -c /home/sparrow/JHU/hairpin/src/gff.cpp
+	/usr/bin/g++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/hairpin.dir/src/gff.cpp.o -c /home/sparrow/JHU/hairpin/src/gff.cpp
 
 CMakeFiles/hairpin.dir/src/gff.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/hairpin.dir/src/gff.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/sparrow/JHU/hairpin/src/gff.cpp > CMakeFiles/hairpin.dir/src/gff.cpp.i
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/sparrow/JHU/hairpin/src/gff.cpp > CMakeFiles/hairpin.dir/src/gff.cpp.i
 
 CMakeFiles/hairpin.dir/src/gff.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/hairpin.dir/src/gff.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/sparrow/JHU/hairpin/src/gff.cpp -o CMakeFiles/hairpin.dir/src/gff.cpp.s
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/sparrow/JHU/hairpin/src/gff.cpp -o CMakeFiles/hairpin.dir/src/gff.cpp.s
 
 CMakeFiles/hairpin.dir/src/tokenize.cpp.o: CMakeFiles/hairpin.dir/flags.make
 CMakeFiles/hairpin.dir/src/tokenize.cpp.o: ../src/tokenize.cpp
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/sparrow/JHU/hairpin/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building CXX object CMakeFiles/hairpin.dir/src/tokenize.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/hairpin.dir/src/tokenize.cpp.o -c /home/sparrow/JHU/hairpin/src/tokenize.cpp
+	/usr/bin/g++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/hairpin.dir/src/tokenize.cpp.o -c /home/sparrow/JHU/hairpin/src/tokenize.cpp
 
 CMakeFiles/hairpin.dir/src/tokenize.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/hairpin.dir/src/tokenize.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/sparrow/JHU/hairpin/src/tokenize.cpp > CMakeFiles/hairpin.dir/src/tokenize.cpp.i
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/sparrow/JHU/hairpin/src/tokenize.cpp > CMakeFiles/hairpin.dir/src/tokenize.cpp.i
 
 CMakeFiles/hairpin.dir/src/tokenize.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/hairpin.dir/src/tokenize.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/sparrow/JHU/hairpin/src/tokenize.cpp -o CMakeFiles/hairpin.dir/src/tokenize.cpp.s
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/sparrow/JHU/hairpin/src/tokenize.cpp -o CMakeFiles/hairpin.dir/src/tokenize.cpp.s
 
 # Object files for target hairpin
 hairpin_OBJECTS = \
