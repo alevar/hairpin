@@ -34,8 +34,11 @@ private:
 class Vertex{
 public:
     Vertex() = default;
-    explicit Vertex(EVec * coords){
-        this->coordinates=coords;
+    explicit Vertex(uint8_t chrID,uint8_t strand, uint32_t pos, uint8_t length){
+        this->chrID=chrID;
+        this->strand=strand;
+        this->pos=pos;
+        this->length=length;
         this->weight=1;
     }
     ~Vertex()=default;
@@ -44,13 +47,27 @@ public:
 
     }
 
-    // TODO: comparison operator so that verticies can be stored in a set
-    //
-
+    uint8_t _getChr(){return this->chrID;}
+    uint8_t _getStrand(){return this->strand;}
+    uint32_t _getPos(){return this->pos;}
+    uint8_t _getLength(){return this->length;}
     int getWeight() {return this->weight;}
 
+    bool operator< (const Vertex& vt) const{
+        return (this->chrID < vt.chrID || this->strand < vt.strand || this->pos <  vt.pos);
+    }
+    bool operator> (const Vertex& vt) const{
+        return (this->chrID > vt.chrID || this->strand > vt.strand || this->pos >  vt.pos);
+    }
+    bool operator==(const Vertex& vt) const{
+        return (this->chrID == vt.chrID && this->strand == vt.strand && this->pos ==  vt.pos && this->length == vt.length);
+    }
+
 private:
-    EVec* coordinates{};
+    uint8_t chrID{};
+    uint8_t strand{};
+    uint32_t pos{};
+    uint8_t length{};
     int weight=0;
     std::vector<Edge> edges{};
 };
@@ -70,19 +87,23 @@ public:
 
 private:
 
+    std::set<Vertex>::iterator add_vertex(uint8_t chrID,uint8_t strand,uint32_t pos,uint8_t length);
+
     HDB* hdb;
 
     struct Stats{
         int numReads=0;
         int numReadsIgnored=0;
         int kmerlen;
+        int numVertices=0;
     } stats;
 
     MinMap::iterator trans_it;
     HDB::GenMap::iterator genom_it;
 
     // below are graph declarations
-    std::set<Vertex> verices;
+    std::set<Vertex> vertices;
+    std::pair<std::set<Vertex>::iterator,bool> vertex_it;
     std::set<Edge> edges;
 
 };

@@ -71,8 +71,6 @@ public:
 
     int getKmerLen();
 
-    // TODO: method to find all coordinates of a kmer - needs to first search in the transcriptomic map and then in genomic and return all coordinates
-
 private:
     bool transcriptomeBuild=true; // whether a transcriptome index is requested
     GffReader gtfReader_;
