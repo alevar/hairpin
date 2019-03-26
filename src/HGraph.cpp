@@ -54,7 +54,11 @@ void HGraph::add_read(std::string &read) {
                                 break; // found match can evaluate the next multimapper
                             }
                             else if(dist > 1){ // means no close match was found and this is a candidate for an edge
-//                                this->add_edge(cur_matches[prev_vi],cur_vertex_it);
+//                              this->add_edge(cur_matches[prev_vi],cur_vertex_it);
+                                // add edges
+                                int edge_inc = cur_matches[prev_vi]->second.addOutEdge(cur_vertex_it);
+                                this->stats.numEdges = this->stats.numEdges + edge_inc; // increment the number of edges
+                                cur_vertex_it->second.addInEdge(cur_matches[prev_vi]);
                                 // also add respective edges to the vertices using addOutEdge and addInEdge
                                 cur_matches[prev_vi]=cur_vertex_it;
                             }
@@ -80,7 +84,7 @@ void HGraph::print_stats() {
     std::cout<<"Number of reads: "<<this->stats.numReads<<std::endl;
     std::cout<<"Number of reads ignored: " <<this->stats.numReadsIgnored<<std::endl;
     std::cout<<"Number of vertices: "<<this->vertices.getSize()<<std::endl;
-    std::cout<<"Number of edges: "<<this->edges.size()<<std::endl;
+    std::cout<<"Number of edges: "<<this->stats.numEdges<<std::endl;
 }
 
 // this function takes the parsed graph and output the SAM-formatted file for further analysis

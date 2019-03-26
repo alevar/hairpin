@@ -1,3 +1,0 @@
-/home/sparrow/JHU/hairpin/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-/home/sparrow/JHU/hairpin/cmake-build-debug/CMakeFiles/hairpin.dir
-/home/sparrow/JHU/hairpin/cmake-build-debug/CMakeFiles/edit_cache.dir

@@ -16,55 +16,23 @@
 #include "MinMap.h"
 
 class Vertex;
+class VCoords;
+class VMap;
+class Edge;
+class Edge_props;
+class EMap;
 
-class Edge{
+class Edge_props{
 public:
-    Edge()=default;
-    Edge(std::set<Vertex>::iterator vit_1,std::set<Vertex>::iterator vit_2, bool known){
-        this->origin=vit_1;
-        this->destination=vit_2;
-        this->known=known;
-        this->weight=1;
-    }
-
-    std::set<Vertex>::iterator getOrigin() {return origin;}
-    std::set<Vertex>::iterator getDestination() {return destination;}
+    Edge_props(){this->weight=1;}
+    void setKnown(){} // set the current edge as known/annotated
+    bool isKnown(){} // is the current edge known/annotated
     void incWeight(){this->weight++;}
-
-//    bool operator< (const Edge& et) const{
-//        return (*origin < *et.origin || *destination < *et.destination);
-//    }
-//    bool operator> (const Edge& vt) const{
-//        return (*this->origin > *vt.origin || *this->destination > *vt.destination);
-//    }
-//    bool operator==(const Edge& vt) const{
-//        return (*this->origin == *vt.origin && *this->destination == *vt.destination);
-//    }
+    int getWeight(){return this->weight;}
 
 private:
-    std::set<Vertex>::iterator origin;
-    std::set<Vertex>::iterator destination;
-    bool known{}; // set to true if the edge is based on the transcriptome
-    int weight=0; // number of reads supporting the edge
-};
-
-class Vertex{
-public:
-    Vertex(){this->weight=1;}
-
-    ~Vertex()=default;
-
-    int getWeight() {return this->weight;}
-    void incWeight(){this->weight++;}
-    void addOutEdge(std::set<Edge>::iterator eit){this->outEdges.emplace_back(eit);}
-    void addInEdge(std::set<Edge>::iterator eit){this->inEdges.emplace_back(eit);}
-    int getOutDegree(){return static_cast<int>(this->outEdges.size());}
-    int getInDegree(){return static_cast<int>(this->inEdges.size());}
-
-private:
-    int weight=0;
-    std::vector<std::set<Edge>::iterator> outEdges{};
-    std::vector<std::set<Edge>::iterator> inEdges{};
+    bool known{};
+    int weight{};
 };
 
 class VCoords{
@@ -95,6 +63,8 @@ public:
         return -1;
     }
 
+    uint8_t getChr() const {return this->chrID;}
+
     struct coord_hash { // in case it is implemented as an unordered_map
         uint64_t operator()(const std::vector<std::pair<int,int> > &coords ) const
         {
@@ -113,6 +83,57 @@ private:
     uint8_t length;
 };
 
+class Vertex{
+public:
+    Vertex(){this->weight=1;}
+
+    ~Vertex()=default;
+
+    int getWeight() {return this->weight;}
+    void incWeight(){this->weight++;}
+
+    int addOutEdge(std::map<VCoords,Vertex>::iterator vit){
+        this->e_it = this->inEdges.insert(std::make_pair(vit,Edge_props()));
+        if(!this->e_it.second){ // not inserted - need to incrrement the weight
+            this->e_it.first->second.incWeight();
+            return 0;
+        }
+        return 1;
+    }
+    int addInEdge(std::map<VCoords,Vertex>::iterator vit){
+        this->e_it = this->inEdges.insert(std::make_pair(vit,Edge_props()));
+        if(!this->e_it.second){ // not inserted - need to incrrement the weight
+            this->e_it.first->second.incWeight();
+            return 0;
+        }
+        return 1;
+    }
+    void test(){
+        for(auto vit: this->outEdges){
+            std::cout<<vit.first->first.getChr()<<std::endl;
+        }
+    }
+
+    int getOutDegree(){return static_cast<int>(this->outEdges.size());}
+    int getInDegree(){return static_cast<int>(this->inEdges.size());}
+
+private:
+    int weight=0;
+
+    struct vmap_cmp {
+        bool operator()(const std::map<VCoords,Vertex>::iterator& vit_1, const std::map<VCoords,Vertex>::iterator& vit_2) const {
+            return vit_1->first < vit_2->first;
+        }
+    };
+
+    typedef std::map<std::map<VCoords,Vertex>::iterator,Edge_props,vmap_cmp> EMap;
+    typedef std::pair<std::map<std::map<VCoords,Vertex>::iterator,Edge_props>::iterator,bool> EMap_it;
+    EMap outEdges{};
+    EMap inEdges{};
+    EMap_it e_it;
+
+};
+
 class VMap{
 public:
     VMap()=default;
@@ -125,12 +146,8 @@ public:
         }
         return this->vm_it.first;
     }
-    void _addOutEdge(Vertex& vt){
-
-    }
-    void _addInEdge(Vertex& vt){
-
-    }
+    void _addOutEdge(Vertex& vt){}
+    void _addInEdge(Vertex& vt){}
 
     int getSize(){return static_cast<int>(this->vertices.size());}
 
@@ -155,25 +172,22 @@ public:
 private:
 
     std::map<VCoords,Vertex>::iterator add_vertex(uint8_t chrID,uint8_t strand,uint32_t pos,uint8_t length);
+//    TODO: std::map<Edge,Edge_props>::iterator add_edge(std::map<VCoords,Vertex>::iterator vt_1,std::map<VCoords,Vertex>::iterator vt_2);
 
     HDB* hdb;
 
     struct Stats{
         int numReads=0;
         int numReadsIgnored=0;
+        int numEdges=0;
         int kmerlen;
     } stats;
 
     MinMap::iterator trans_it;
     HDB::GenMap::iterator genom_it;
 
-    // below are graph declarations
-    typedef std::tuple<uint8_t,uint8_t,uint32_t,uint8_t> vt_coords;
     VMap vertices;
     std::pair<std::map<VCoords,Vertex>::iterator,bool> vertex_it;
-
-    std::vector<Edge> edges;
-    std::pair<std::vector<Edge>::iterator,bool> edge_it;
 
 };
 
