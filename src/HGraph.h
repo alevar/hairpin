@@ -94,7 +94,7 @@ public:
 
     int addOutEdge(std::map<VCoords,Vertex>::iterator vit){
         this->e_it = this->inEdges.insert(std::make_pair(vit,Edge_props()));
-        if(!this->e_it.second){ // not inserted - need to incrrement the weight
+        if(!this->e_it.second){ // not inserted - need to increment the weight
             this->e_it.first->second.incWeight();
             return 0;
         }
@@ -102,7 +102,7 @@ public:
     }
     int addInEdge(std::map<VCoords,Vertex>::iterator vit){
         this->e_it = this->inEdges.insert(std::make_pair(vit,Edge_props()));
-        if(!this->e_it.second){ // not inserted - need to incrrement the weight
+        if(!this->e_it.second){ // not inserted - need to increment the weight
             this->e_it.first->second.incWeight();
             return 0;
         }
@@ -160,6 +160,7 @@ class HGraph {
 public:
     HGraph();
     explicit HGraph(HDB* hdb);
+    HGraph(HDB* hdb,int max_intron,int min_intron);
     ~HGraph();
 
     void add_read(std::string& read);
@@ -176,6 +177,8 @@ private:
 
     HDB* hdb;
 
+    int maxIntron=10;
+    int minIntron=500000;
     struct Stats{
         int numReads=0;
         int numReadsIgnored=0;
