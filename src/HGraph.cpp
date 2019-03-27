@@ -56,38 +56,56 @@ void HGraph::add_read(std::string &read) {
                         // subtract the new vertex from the other and see if the difference is 1
                         // if not 1 - this is a candidate for an edge
                         bool first=false; // most parsimonious case found - 1 base difference - should skip other cases
-                        std::vector<int> second; // second cases where no match was found but an edge might exist
-                        std::vector<int> third; // third case - might not even be relevant, but we should still include these coordinates just in case
+                        int secondFound=-1; // the index of the first element to which an edge is added
+                        std::vector<int> seconds; // second cases where no match was found but an edge might exist
+                        bool third=false; // third case - should the new entry be created?
 
                         for (int prev_vi=0;prev_vi<cur_matches.size();prev_vi++){ // see if a match is found in the current list of vertices
                             if(cur_vertex_it==cur_matches[prev_vi]){ //points to the same node
                                 continue;
                             }
                             int dist=cur_vertex_it->first-cur_matches[prev_vi]->first;
-                            if(dist == 1){ //only one base difference - can replace the entry with the new
+                            if (dist==0){
+                                continue; //same as the previous comparison
+                            }
+                            else if(dist == 1){ //only one base difference - can replace the entry with the new
                                 cur_matches[prev_vi]=cur_vertex_it;
                                 first=true;
                                 break; // found match can evaluate the next multimapper
                             }
-                            else if(dist > this->minIntron && dist < this->maxIntron){ // means no close match was found and this is a candidate for an edge
-                                second.emplace_back(prev_vi);
+                            else if((dist-this->stats.kmerlen) > this->minIntron && (dist-this->stats.kmerlen) < this->maxIntron){ // means no close match was found and this is a candidate for an edge
+                                if(secondFound==-1){
+                                    secondFound=prev_vi;
+                                }
+                                else{
+                                    seconds.emplace_back(prev_vi);
+                                }
                             }
                             else{ // anything else than one should be ignored and inserted back into the cur_matches;
                                 // add as a candidate for a new node
-                                third.emplace_back(prev_vi);
+                                third=true;
                             }
                         }
                         if(!first){ // did not find the best case and need to add cases two and three
-                            for(int si=0;si<second.size();si++){ // first output edges
-                                // add as a candidate for a potential splice site
-                                // add edges
-                                int edge_inc = cur_matches[si]->second.addOutEdge(cur_vertex_it);
+                            if(secondFound>=0){
+                                // process original second
+                                int edge_inc = cur_matches[secondFound]->second.addOutEdge(cur_vertex_it);
                                 this->stats.numEdges = this->stats.numEdges + edge_inc; // increment the number of edges
-                                cur_vertex_it->second.addInEdge(cur_matches[si]);
-                                // replace old entry with the new one
-                                cur_matches[si]=cur_vertex_it;
+                                cur_vertex_it->second.addInEdge(cur_matches[secondFound]);
+                                cur_matches[secondFound]=cur_vertex_it;
+
+                                for (int second_idx : seconds) { // first output edges
+                                    // add as a candidate for a potential splice site
+                                    // add edges
+                                    edge_inc = cur_matches[second_idx]->second.addOutEdge(cur_vertex_it);
+                                    this->stats.numEdges = this->stats.numEdges + edge_inc; // increment the number of edges
+                                    cur_vertex_it->second.addInEdge(cur_matches[second_idx]);
+                                }
+                                for (int second_idx : seconds) { // remove redundant entries
+                                    cur_matches.erase(cur_matches.begin()+second_idx);
+                                }
                             }
-                            if(!third.empty()){
+                            if(!third && secondFound == -1){
                                 cur_matches.emplace_back(cur_vertex_it);
                             }
                         }
@@ -134,7 +152,7 @@ void HGraph::parse_graph() {
             for(auto eit: vit.second.getOutEdges()) {
                 counter++;
                 edges_fp << counter << "\t" << this->hdb->getContigFromID(vit.first.getChr()) << "\t" << vit.first.getStrand() << "\t"
-                         << vit.first.getStart() + vit.first.getLength() << "\t" << eit.first->first.getStart()+eit.first->first.getLength() << "\t"
+                         << vit.first.getStart() + vit.first.getLength() << "\t" << eit.first->first.getStart() << "\t"
                          << eit.second.getWeight() << "\t" << std::endl;
             }
         }

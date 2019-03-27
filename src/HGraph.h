@@ -58,7 +58,14 @@ public:
 
     int operator- (const VCoords& vc) const{
         if(this->chrID == vc.chrID && this->strand == vc.strand){
-            return vc.pos - this->pos;
+            return this->pos-vc.pos;
+        }
+        return -1;
+    }
+
+    int findIntronLength(const VCoords& vc1, const VCoords& vc2) const{ // non functional method
+        if(vc1.chrID == vc2.chrID && vc1.strand == vc2.strand){
+            return vc2.pos - vc1.pos;
         }
         return -1;
     }
@@ -96,14 +103,11 @@ public:
     void incWeight(){this->weight++;}
 
     int addOutEdge(std::map<VCoords,Vertex>::iterator vit){
-        // TODO: remove print the number of edges after eaddition
-//        std::cout<<"pre\t"<<this->inEdges.size()<<std::endl;
         this->e_it = this->outEdges.insert(std::make_pair(vit,Edge_props()));
         if(!this->e_it.second){ // not inserted - need to increment the weight
             this->e_it.first->second.incWeight();
             return 0;
         }
-//        std::cout<<"post\t"<<this->inEdges.size()<<std::endl;
         return 1;
     }
     int addInEdge(std::map<VCoords,Vertex>::iterator vit){
@@ -115,8 +119,8 @@ public:
         return 1;
     }
 
-    int getOutDegree(){return (this->outEdges.size());}
-    int getInDegree(){return (this->inEdges.size());}
+    int getOutDegree(){return static_cast<int>(this->outEdges.size());}
+    int getInDegree(){return static_cast<int>(this->inEdges.size());}
 
     struct vmap_cmp {
         bool operator()(const std::map<VCoords,Vertex>::iterator& vit_1, const std::map<VCoords,Vertex>::iterator& vit_2) const {
