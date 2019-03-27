@@ -33,3 +33,5 @@
 
 # test directories
 testDB/
+cmake-build-debug/
+.idea/
