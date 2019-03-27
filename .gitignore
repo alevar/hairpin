@@ -32,9 +32,16 @@
 *.app
 
 # test directories
-testDB/
-testDB_genome/
+humanDB_genome/
+humanDB_trans/
+humanOut_genome/
+humanOut_trans/
+drosophilaDB_genome/
+drosophilaDB_trans/
+drosophilaOut_genome/
+drosophilaOut_trans/
 cmake-build-debug/
 cmake-build-release/
 .idea/
-testOut_genome/
+
+data/drosophila_4_introns.gff
