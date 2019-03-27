@@ -182,6 +182,7 @@ public:
     void to_sam(std::string out_sam_fname);
     void sort_graph();
     void parse_graph();
+    void write_intron_gff();
 
 private:
 

@@ -139,6 +139,26 @@ void HGraph::sort_graph() {
 
 }
 
+void HGraph::write_intron_gff() {
+    std::string edges_fname(this->out_fname);
+    edges_fname.append(".intron.gff");
+    std::ofstream edges_fp(edges_fname.c_str());
+
+    int counter=0; // sets id
+    for(auto vit: this->vertices){
+        if(vit.second.getOutDegree()>0) {
+            for(auto eit: vit.second.getOutEdges()) {
+                counter++;
+                edges_fp << this->hdb->getContigFromID(vit.first.getChr()) << "\t" << "hairpin" << "\t" << "intron" << "\t"
+                         << vit.first.getStart() + vit.first.getLength() << "\t" << eit.first->first.getStart() << "\t"
+                         << "." << "\t" << vit.first.getStrand() << "\t" << "." << "\t" <<  eit.second.getWeight() << std::endl;
+            }
+        }
+    }
+
+    edges_fp.close();
+}
+
 // parse graph and evaluate gaps and assign splice junctions and mismatches and gaps
 void HGraph::parse_graph() {
     // this is a toy example for prsing the data
@@ -151,9 +171,9 @@ void HGraph::parse_graph() {
         if(vit.second.getOutDegree()>0) {
             for(auto eit: vit.second.getOutEdges()) {
                 counter++;
-                edges_fp << counter << "\t" << this->hdb->getContigFromID(vit.first.getChr()) << "\t" << vit.first.getStrand() << "\t"
+                edges_fp << this->hdb->getContigFromID(vit.first.getChr()) << "\t" << "hairpin" << "\t" << "intron" << "\t"
                          << vit.first.getStart() + vit.first.getLength() << "\t" << eit.first->first.getStart() << "\t"
-                         << eit.second.getWeight() << "\t" << std::endl;
+                         << "." << "\t" << vit.first.getStrand() << "\t" << "." << "\t" <<  eit.second.getWeight() << std::endl;
             }
         }
     }
