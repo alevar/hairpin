@@ -71,6 +71,8 @@ public:
 
     int getKmerLen();
 
+    std::string getContigFromID(uint8_t id){return id_to_contig[id].first;}
+
 private:
     bool transcriptomeBuild=true; // whether a transcriptome index is requested
     GffReader gtfReader_;

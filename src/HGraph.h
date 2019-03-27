@@ -96,11 +96,14 @@ public:
     void incWeight(){this->weight++;}
 
     int addOutEdge(std::map<VCoords,Vertex>::iterator vit){
-        this->e_it = this->inEdges.insert(std::make_pair(vit,Edge_props()));
+        // TODO: remove print the number of edges after eaddition
+//        std::cout<<"pre\t"<<this->inEdges.size()<<std::endl;
+        this->e_it = this->outEdges.insert(std::make_pair(vit,Edge_props()));
         if(!this->e_it.second){ // not inserted - need to increment the weight
             this->e_it.first->second.incWeight();
             return 0;
         }
+//        std::cout<<"post\t"<<this->inEdges.size()<<std::endl;
         return 1;
     }
     int addInEdge(std::map<VCoords,Vertex>::iterator vit){
@@ -112,8 +115,8 @@ public:
         return 1;
     }
 
-    int getOutDegree(){return static_cast<int>(this->outEdges.size());}
-    int getInDegree(){return static_cast<int>(this->inEdges.size());}
+    int getOutDegree(){return (this->outEdges.size());}
+    int getInDegree(){return (this->inEdges.size());}
 
     struct vmap_cmp {
         bool operator()(const std::map<VCoords,Vertex>::iterator& vit_1, const std::map<VCoords,Vertex>::iterator& vit_2) const {
@@ -121,17 +124,17 @@ public:
         }
     };
 
-    std::map<std::map<VCoords,Vertex>::iterator,Edge_props, vmap_cmp> getEdges(){return this->outEdges;}
+    std::map<std::map<VCoords,Vertex>::iterator,Edge_props, vmap_cmp> getOutEdges(){return this->outEdges;}
+    std::map<std::map<VCoords,Vertex>::iterator,Edge_props, vmap_cmp> getInEdges(){return this->inEdges;}
 
 private:
     int weight=0;
 
     typedef std::map<std::map<VCoords,Vertex>::iterator,Edge_props,vmap_cmp> EMap;
     typedef std::pair<std::map<std::map<VCoords,Vertex>::iterator,Edge_props>::iterator,bool> EMap_it;
-    EMap outEdges{};
-    EMap inEdges{};
+    std::map<std::map<VCoords,Vertex>::iterator,Edge_props,vmap_cmp> outEdges{};
+    std::map<std::map<VCoords,Vertex>::iterator,Edge_props,vmap_cmp> inEdges{};
     EMap_it e_it;
-
 };
 
 class VMap{
@@ -146,8 +149,6 @@ public:
         }
         return this->vm_it.first;
     }
-    void _addOutEdge(Vertex& vt){}
-    void _addInEdge(Vertex& vt){}
 
     int getSize(){return static_cast<int>(this->vertices.size());}
 

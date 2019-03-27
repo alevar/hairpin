@@ -130,12 +130,10 @@ void HGraph::parse_graph() {
 
     int counter=0; // sets id
     for(auto vit: this->vertices){
-        std::cout<<"hello\t"<<vit.second.getOutDegree()<<std::endl;
         if(vit.second.getOutDegree()>0) {
-            std::cout<<"hello2"<<std::endl;
-            for(auto eit: vit.second.getEdges()) {
+            for(auto eit: vit.second.getOutEdges()) {
                 counter++;
-                edges_fp << counter << "\t" << vit.first.getChr() << "\t" << vit.first.getStrand() << "\t"
+                edges_fp << counter << "\t" << this->hdb->getContigFromID(vit.first.getChr()) << "\t" << vit.first.getStrand() << "\t"
                          << vit.first.getStart() + vit.first.getLength() << "\t" << eit.first->first.getStart()+eit.first->first.getLength() << "\t"
                          << eit.second.getWeight() << "\t" << std::endl;
             }
