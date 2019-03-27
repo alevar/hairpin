@@ -11,11 +11,12 @@ HGraph::HGraph(HDB* hdb){
     this->stats.kmerlen=this->hdb->getKmerLen();
 }
 
-HGraph::HGraph(HDB* hdb,int max_intron,int min_intron){
+HGraph::HGraph(HDB* hdb,int max_intron,int min_intron, std::string out_fname){
     this->hdb=hdb;
     this->stats.kmerlen=this->hdb->getKmerLen();
     this->maxIntron=max_intron;
     this->minIntron=min_intron;
+    this->out_fname=out_fname;
 }
 
 HGraph::~HGraph() = default;
@@ -111,9 +112,8 @@ void HGraph::print_stats() {
     std::cout<<"Number of edges: "<<this->stats.numEdges<<std::endl;
 }
 
-// this function takes the parsed graph and output the SAM-formatted file for further analysis
-void HGraph::to_sam(std::string out_sam_fname) {
-
+std::map<VCoords,Vertex>::iterator HGraph::add_vertex(uint8_t chrID,uint8_t strand,uint32_t pos,uint8_t length) {
+    return this->vertices._insert(chrID,strand,pos,length);
 }
 
 // topological sort of the graph
@@ -123,10 +123,29 @@ void HGraph::sort_graph() {
 
 // parse graph and evaluate gaps and assign splice junctions and mismatches and gaps
 void HGraph::parse_graph() {
+    // this is a toy example for prsing the data
+    std::string edges_fname(this->out_fname);
+    edges_fname.append(".edges");
+    std::ofstream edges_fp(edges_fname.c_str());
 
+    int counter=0; // sets id
+    for(auto vit: this->vertices){
+        std::cout<<"hello\t"<<vit.second.getOutDegree()<<std::endl;
+        if(vit.second.getOutDegree()>0) {
+            std::cout<<"hello2"<<std::endl;
+            for(auto eit: vit.second.getEdges()) {
+                counter++;
+                edges_fp << counter << "\t" << vit.first.getChr() << "\t" << vit.first.getStrand() << "\t"
+                         << vit.first.getStart() + vit.first.getLength() << "\t" << eit.first->first.getStart()+eit.first->first.getLength() << "\t"
+                         << eit.second.getWeight() << "\t" << std::endl;
+            }
+        }
+    }
+
+    edges_fp.close();
 }
 
-std::map<VCoords,Vertex>::iterator HGraph::add_vertex(uint8_t chrID,uint8_t strand,uint32_t pos,uint8_t length) {
-    return this->vertices._insert(chrID,strand,pos,length);
-}
+// this function takes the parsed graph and output the SAM-formatted file for further analysis
+void HGraph::to_sam(std::string out_sam_fname) {
 
+}

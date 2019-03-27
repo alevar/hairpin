@@ -64,6 +64,9 @@ public:
     }
 
     uint8_t getChr() const {return this->chrID;}
+    uint8_t getStrand() const {return this->strand;}
+    uint32_t getStart() const {return this->pos;}
+    uint8_t getLength() const {return this->length;}
 
     struct coord_hash { // in case it is implemented as an unordered_map
         uint64_t operator()(const std::vector<std::pair<int,int> > &coords ) const
@@ -108,23 +111,20 @@ public:
         }
         return 1;
     }
-    void test(){
-        for(auto vit: this->outEdges){
-            std::cout<<vit.first->first.getChr()<<std::endl;
-        }
-    }
 
     int getOutDegree(){return static_cast<int>(this->outEdges.size());}
     int getInDegree(){return static_cast<int>(this->inEdges.size());}
-
-private:
-    int weight=0;
 
     struct vmap_cmp {
         bool operator()(const std::map<VCoords,Vertex>::iterator& vit_1, const std::map<VCoords,Vertex>::iterator& vit_2) const {
             return vit_1->first < vit_2->first;
         }
     };
+
+    std::map<std::map<VCoords,Vertex>::iterator,Edge_props, vmap_cmp> getEdges(){return this->outEdges;}
+
+private:
+    int weight=0;
 
     typedef std::map<std::map<VCoords,Vertex>::iterator,Edge_props,vmap_cmp> EMap;
     typedef std::pair<std::map<std::map<VCoords,Vertex>::iterator,Edge_props>::iterator,bool> EMap_it;
@@ -151,6 +151,14 @@ public:
 
     int getSize(){return static_cast<int>(this->vertices.size());}
 
+    typedef std::map<VCoords,Vertex>::iterator iterator;
+    typedef std::map<VCoords,Vertex>::const_iterator const_iterator;
+    typedef std::map<VCoords,Vertex>::reference reference;
+    iterator begin() {return this->vertices.begin();}
+    const_iterator begin() const { return this->vertices.begin();}
+    iterator end() {return this->vertices.end();}
+    const_iterator end() const { return this->vertices.end();}
+
 private:
     std::map<VCoords,Vertex> vertices;
     std::pair<std::map<VCoords,Vertex>::iterator,bool> vm_it;
@@ -160,7 +168,7 @@ class HGraph {
 public:
     HGraph();
     explicit HGraph(HDB* hdb);
-    HGraph(HDB* hdb,int max_intron,int min_intron);
+    HGraph(HDB* hdb,int max_intron,int min_intron,std::string out_fname);
     ~HGraph();
 
     void add_read(std::string& read);
@@ -176,6 +184,7 @@ private:
 //    TODO: std::map<Edge,Edge_props>::iterator add_edge(std::map<VCoords,Vertex>::iterator vt_1,std::map<VCoords,Vertex>::iterator vt_2);
 
     HDB* hdb;
+    std::string out_fname="";
 
     int maxIntron=10;
     int minIntron=500000;

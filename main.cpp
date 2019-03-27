@@ -43,12 +43,14 @@ int hairpin_quant(int argc,char* argv[]){
     args_quant.parse_args(argc,argv);
 
     HDB hdb;
-    std::cout<<"Loading the database"<<std::endl;
+    std::cerr<<"Loading the database"<<std::endl;
     hdb.load_db(args_quant.get_string(Opt_Quant::HDB_FP));
 
-    HGraph hg(&hdb,args_quant.get_int(Opt_Quant::MAX),args_quant.get_int(Opt_Quant::MIN));
-    std::cout<<"processing reads"<<std::endl;
+    HGraph hg(&hdb,args_quant.get_int(Opt_Quant::MAX),args_quant.get_int(Opt_Quant::MIN),args_quant.get_string(Opt_Quant::OUTPUT));
+    std::cerr<<"processing reads"<<std::endl;
     process_reads_single(args_quant.get_string(Opt_Quant::UNPAIR),hg);
+    std::cerr<<"parsing the graph"<<std::endl;
+    hg.parse_graph();
     hg.print_stats();
 
     // when parsing a read - need to set the minimum number of kmers that need ot be mapped from that read
@@ -80,9 +82,9 @@ int hairpin_build(int argc,char* argv[]){
     else {
         hdb.init(args_build.get_string(Opt_Build::GFF), args_build.get_string(Opt_Build::REF));
     }
-    std::cout<<"building the database:\t"<<std::endl;
+    std::cerr<<"building the database:\t"<<std::endl;
     hdb.make_db(args_build.get_string(Opt_Build::HDB_FP), args_build.get_int(Opt_Build::KMERLEN));
-    std::cout<<"saving the database:\t"<<std::endl;
+    std::cerr<<"saving the database:\t"<<std::endl;
     hdb.save_db();
 
     return 0;
