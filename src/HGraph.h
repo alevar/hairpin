@@ -47,7 +47,7 @@ public:
     ~VCoords()=default;
 
     bool operator< (const VCoords& vc) const{
-        return (this->chrID < vc.chrID || this->strand < vc.strand || this->pos <  vc.pos);
+        return (this->chrID < vc.chrID || this->strand < vc.strand || (this->pos <  vc.pos)); // the coordinate test should return equal if
     }
     bool operator> (const VCoords& vc) const{
         return (this->chrID > vc.chrID || this->strand > vc.strand || this->pos >  vc.pos);
@@ -73,6 +73,7 @@ public:
     uint8_t getChr() const {return this->chrID;}
     uint8_t getStrand() const {return this->strand;}
     uint32_t getStart() const {return this->pos;}
+    uint32_t getEnd() const {return this->pos+this->length;}
     uint8_t getLength() const {return this->length;}
 
     struct coord_hash { // in case it is implemented as an unordered_map
@@ -100,6 +101,22 @@ public:
     ~Vertex()=default;
 
     int getWeight() {return this->weight;}
+    int getOutEdgeWeight(uint32_t end){
+        for(auto vt: this->outEdges){
+            if(vt.first->first.getEnd()==end){
+                return vt.second.getWeight();
+            }
+        }
+        return -1;
+    }
+    int getInEdgeWeight(uint32_t start){
+        for(auto vt: this->inEdges){
+            if(vt.first->first.getStart()==start){
+                return vt.second.getWeight();
+            }
+        }
+        return -1;
+    }
     void incWeight(){this->weight++;}
 
     int addOutEdge(std::map<VCoords,Vertex>::iterator vit){
@@ -169,7 +186,48 @@ private:
     std::pair<std::map<VCoords,Vertex>::iterator,bool> vm_it;
 };
 
-class HGraph {
+class Aggregate_edge_props{ // TODO: potentially entirely get rifd of storing edges in the vertices and only keep track of them here if this approach works
+public:
+    Aggregate_edge_props()=default;
+    Aggregate_edge_props(std::map<VCoords,Vertex>::iterator prev, std::map<VCoords,Vertex>::iterator next){
+        this->addNext(next);
+        this->addPrev(prev);
+    }
+
+    void setKnown(){} // set the current edge as known/annotated
+    bool isKnown(){} // is the current edge known/annotated
+    int getWeight(){
+        // TODO: needs to compute weight across all vertices that belong to the edge
+        int total=0;
+        for(auto vt : this->nexts){ // there is a problem here - we can not go to the exact edge in the vertex which is needed to compute the weight of a given edge
+            int wt = vt->second.getInEdgeWeight(prevs[0]->first.getStart());
+            total=total+wt;
+            if(wt<0){
+                std::cerr<<"something is wrong when getting edges"<<std::endl;
+                exit(-1);
+            }
+        }
+        return total;
+    }
+    uint32_t getStart(){return prevs[0]->first.getEnd();}
+    uint32_t getEnd(){return nexts[0]->first.getStart();}
+    uint8_t getChr(){return prevs[0]->first.getChr();}
+    uint8_t getStrand(){return prevs[0]->first.getStrand();}
+
+    void addNext(std::map<VCoords,Vertex>::iterator vt){this->nexts.emplace_back(vt);}
+    void addPrev(std::map<VCoords,Vertex>::iterator vt){this->prevs.emplace_back(vt);}
+    std::vector<std::map<VCoords,Vertex>::iterator> getNexts(){return this->nexts;}
+    std::vector<std::map<VCoords,Vertex>::iterator> getPrevs(){return this->prevs;}
+
+
+private:
+    bool known{};
+
+    typedef std::vector<std::map<VCoords,Vertex>::iterator> VP; // vertex pointers
+    VP nexts{},prevs{};
+};
+
+class HGraph { // TODO: add interface to substring the database to query for splice junctions
 public:
     HGraph();
     explicit HGraph(HDB* hdb);
@@ -179,6 +237,8 @@ public:
     void add_read(std::string& read);
     void print_stats();
 
+    void add_edge(std::map<VCoords,Vertex>::iterator vit1,std::map<VCoords,Vertex>::iterator vit2);
+
     void to_sam(std::string out_sam_fname);
     void sort_graph();
     void parse_graph();
@@ -187,7 +247,18 @@ public:
 private:
 
     std::map<VCoords,Vertex>::iterator add_vertex(uint8_t chrID,uint8_t strand,uint32_t pos,uint8_t length);
-//    TODO: std::map<Edge,Edge_props>::iterator add_edge(std::map<VCoords,Vertex>::iterator vt_1,std::map<VCoords,Vertex>::iterator vt_2);
+
+    typedef std::map<VCoords,Vertex>::iterator VIT;
+    typedef std::pair<VIT,VIT> Edge;
+    struct edge_cmp { // the comparator in this case simply compares if the splice site coordinates are identical
+        bool operator()(const Edge& vit_1, const Edge& vit_2) const {
+            return vit_1.first->first.getEnd() < vit_2.first->first.getEnd()
+            || vit_1.second->first.getEnd() < vit_2.second->first.getEnd();
+        }
+    };
+
+    std::map<Edge,Aggregate_edge_props,edge_cmp> emap;
+    std::pair<std::map<Edge,Aggregate_edge_props,edge_cmp>::iterator,bool> emap_it;
 
     HDB* hdb;
     std::string out_fname="";

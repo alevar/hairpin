@@ -51,6 +51,7 @@ int hairpin_quant(int argc,char* argv[]){
     process_reads_single(args_quant.get_string(Opt_Quant::UNPAIR),hg);
     std::cerr<<"parsing the graph"<<std::endl;
     hg.parse_graph();
+    hg.write_intron_gff();
     hg.print_stats();
 
     // when parsing a read - need to set the minimum number of kmers that need ot be mapped from that read
