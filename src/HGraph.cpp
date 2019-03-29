@@ -22,6 +22,7 @@ HGraph::HGraph(HDB* hdb,int max_intron,int min_intron, std::string out_fname){
 HGraph::~HGraph() = default;
 
 void HGraph::add_edge(std::map<VCoords,Vertex>::iterator prev,std::map<VCoords,Vertex>::iterator next){
+
     int edge_inc = prev->second.addOutEdge(next);
     next->second.addInEdge(prev);
     this->stats.numEdges = this->stats.numEdges + edge_inc; // increment the number of edges
@@ -53,30 +54,51 @@ void HGraph::add_read(std::string &read) {
         if(this->trans_it!=this->hdb->trans_end()){ // match to transcriptome found
             // TODO: do the transcriptomic search now
             if(!cur_matches.empty()) { // TODO: should the same cur_matches be used for the transcriptomic and genomic? At the moment it seems to be the case since there could be cases when a transcriptomic match follows a genomic and a potential splice junction can exist
-                for (auto &ev : this->trans_it->second) { // for each multimapper in the transcriptomic hit
-                    for (auto &ep : ev){ // since each transcriptomic hit can have several coordinates spanning a splice junction we need to add a Vertex for each chunk within the coordinate vector
-                        cur_vertex_it=this->add_vertex(ev._getChr(),ev._getStrand(),ep.getStart(),ep.getLength());
-
-                        bool first=false; // most parsimonious case found - 1 base difference - should skip other cases
-                        int secondFound=-1; // the index of the first element to which an edge is added
-                        std::vector<int> seconds; // second cases where no match was found but an edge might exist
-                        bool third=false; // third case - should the new entry be created?
-
-                        // the logic here will be a little more involved
-
-                        // we are operating on chunks of a kmer whenever there is a splice junction
-
-                    }
-                }
+//                for (auto &ev : this->trans_it->second) { // for each multimapper in the transcriptomic hit
+//                    for (auto &ep : ev){ // since each transcriptomic hit can have several coordinates spanning a splice junction we need to add a Vertex for each chunk within the coordinate vector
+//                        cur_vertex_it=this->add_vertex(ev._getChr(),ev._getStrand(),ep.getStart(),ep.getLength());
+//
+//                        bool first=false; // most parsimonious case found - 1 base difference - should skip other cases
+//                        int secondFound=-1; // the index of the first element to which an edge is added
+//                        std::vector<int> seconds; // second cases where no match was found but an edge might exist
+//                        bool third=false; // third case - should the new entry be created?
+//
+//                        // the logic here will be a little more involved
+//
+//                        // we are operating on chunks of a kmer whenever there is a splice junction
+//
+//                        // 1. if this is the first chunk in the coordinate vector - do the same evaluation as before
+//                        // 2. if the chunk is not the first - then need to figure out which multimapper it is associated with
+//                        //      this need to be handled correctly since the logic is likely to be different from that of the genomic lookup
+//
+//                        // here a different type of lookup is possible
+//                        // if a kmer spans a junction - and the first vertex has a distance of 1
+//                        // then the junction spanned should also be compatible with the previously observed kmer
+//
+//                        int counter=0;
+//                        for (int prev_vi=0;prev_vi<cur_matches.size();prev_vi++){
+//                            if(cur_vertex_it==cur_matches[prev_vi]){continue;} // first case
+//
+//                            int dist=cur_vertex_it->first-cur_matches[prev_vi]->first;
+//                            if (dist==0){continue;} //same as first case
+//
+//                        }
+//                    }
+//                }
             }
             else{ // nothing was there before, so need to add new elements based on the results of the database search
                 for (auto &ev : this->trans_it->second) { // for each multimapper
                     std::map<VCoords,Vertex>::iterator prev_vertex,first_vertex;
                     int counter=0;
-                    for (auto &ep : ev){
+                    for (auto &ep : ev){ // for each pair in the coordinate vector
                         cur_vertex_it=this->add_vertex(ev._getChr(),ev._getStrand(),ep.getStart(),ep.getLength());
-                        if(counter>0){this->add_edge(prev_vertex,cur_vertex_it);} // if the current piece indicates a splice junction - need to insert an edge - add edge
-                        else{first_vertex=cur_vertex_it; } // remeber the first vertex
+                        if(counter>0){
+                            if(prev_vertex->first.getEnd()==210675&& cur_vertex_it->first.getStart()==211590){
+                                std::cout<<"found add_edge"<<std::endl;
+                            }
+                            this->add_edge(prev_vertex,cur_vertex_it);
+                        } // if the current piece indicates a splice junction - need to insert an edge - add edge
+                        else{first_vertex=cur_vertex_it;} // remeber the first vertex
                         counter++;
                         prev_vertex=cur_vertex_it;
                     }

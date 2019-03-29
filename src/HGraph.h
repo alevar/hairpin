@@ -47,10 +47,10 @@ public:
     ~VCoords()=default;
 
     bool operator< (const VCoords& vc) const{
-        return (this->chrID < vc.chrID || this->strand < vc.strand || (this->pos <  vc.pos)); // the coordinate test should return equal if
+        return (this->chrID < vc.chrID || this->strand < vc.strand || (this->pos <  vc.pos) || this->getEnd() < vc.getEnd()); // the coordinate test should return equal if
     }
     bool operator> (const VCoords& vc) const{
-        return (this->chrID > vc.chrID || this->strand > vc.strand || this->pos >  vc.pos);
+        return (this->chrID > vc.chrID || this->strand > vc.strand || this->pos >  vc.pos || this->getEnd() > vc.getEnd());
     }
     bool operator==(const VCoords& vc) const{
         return (this->chrID == vc.chrID && this->strand == vc.strand && this->pos ==  vc.pos && this->length == vc.length);
@@ -251,9 +251,9 @@ private:
     typedef std::map<VCoords,Vertex>::iterator VIT;
     typedef std::pair<VIT,VIT> Edge;
     struct edge_cmp { // the comparator in this case simply compares if the splice site coordinates are identical
-        bool operator()(const Edge& vit_1, const Edge& vit_2) const {
-            return vit_1.first->first.getEnd() < vit_2.first->first.getEnd()
-            || vit_1.second->first.getEnd() < vit_2.second->first.getEnd();
+        bool operator()(const Edge& prev, const Edge& next) const {
+            return prev.first->first.getEnd() < next.first->first.getEnd()
+            || prev.second->first.getStart() < next.second->first.getStart();
         }
     };
 

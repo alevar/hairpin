@@ -239,9 +239,9 @@ void HDB::get_exonic_sequence(GffObj &p_trans, FastaRecord &rec, uint8_t contigI
                             char *rev_cur_kmer = new char[this->kmerlen];
                             strcpy(rev_cur_kmer, sub_seq.c_str());
                             reverseComplement(rev_cur_kmer, this->kmerlen);
-                            cur_coords.flipStrand(); // change strand information for the reverse complement
+//                            cur_coords.flipStrand(); // change strand information for the reverse complement
                             this->trans_map._insert(std::string(rev_cur_kmer), cur_coords);
-                            cur_coords.flipStrand(); // reset the strand information back
+//                            cur_coords.flipStrand(); // reset the strand information back
                             delete[] rev_cur_kmer;
                         }
                         cur_len -= 1;
@@ -287,9 +287,9 @@ void HDB::get_exonic_sequence(GffObj &p_trans, FastaRecord &rec, uint8_t contigI
                         char *rev_cur_kmer = new char[this->kmerlen];
                         strcpy(rev_cur_kmer, sub_seq.c_str());
                         reverseComplement(rev_cur_kmer, this->kmerlen);
-                        cur_coords.flipStrand(); // change strand information for the reverse complement
+//                        cur_coords.flipStrand(); // change strand information for the reverse complement
                         this->trans_map._insert(std::string(rev_cur_kmer), cur_coords);
-                        cur_coords.flipStrand(); // reset the strand information back
+//                        cur_coords.flipStrand(); // reset the strand information back
                         delete[] rev_cur_kmer;
                         // add new coordinates here
                     }
