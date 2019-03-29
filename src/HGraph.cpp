@@ -174,11 +174,6 @@ std::map<VCoords,Vertex>::iterator HGraph::add_vertex(uint8_t chrID,uint8_t stra
     return this->vertices._insert(chrID,strand,pos,length);
 }
 
-// TODO: need to implement add_vertex for transcriptome - in that case it should somehow unite vertices based on the splice junction
-//      since no longer vertices have the same length - they now need to be able to form the same vertex even if of different lengths and with different start sites
-//      potentially we can add them either based on the start or based on the end if splice junction, in which case the vertex can be extended in either direction
-//      however, the problem with that approach is that we can not modify vertex coordinates since they are of const type as the map key
-
 // topological sort of the graph
 void HGraph::sort_graph() {
 
@@ -190,10 +185,14 @@ void HGraph::write_intron_gff() {
     std::ofstream edges_fp(edges_fname.c_str());
 
     int counter=0;
+    std::string sub_seq;
     for(auto eit : this->emap){
+        // first get fasta sequence
+        this->getGenomeSubstr(eit.first,10,sub_seq);
         edges_fp << this->hdb->getContigFromID(eit.second.getChr()) << "\t" << "hairpin" << "\t" << "intron" << "\t"
                  << eit.second.getStart() << "\t" << eit.second.getEnd() << "\t"
-                 << "." << "\t" << eit.second.getStrand() << "\t" << "." << "\t" <<  eit.second.getWeight() << std::endl;
+                 << "." << "\t" << eit.second.getStrand() << "\t" << "." << "\t" <<  "weight="<<eit.second.getWeight()
+                 <<";start="<< sub_seq.substr(0,20) <<";end=" << sub_seq.substr(sub_seq.length()-20,20) << std::endl;
 
         counter++;
     }
@@ -209,10 +208,14 @@ void HGraph::parse_graph() {
     std::ofstream edges_fp(edges_fname.c_str());
 
     int counter=0;
-    for(auto eit : this->emap){ // cycles through all the edges in ascending order
+    std::string sub_seq;
+    for(auto eit : this->emap){
+        // first get fasta sequence
+        this->getGenomeSubstr(eit.first,10,sub_seq);
         edges_fp << this->hdb->getContigFromID(eit.second.getChr()) << "\t" << "hairpin" << "\t" << "intron" << "\t"
                  << eit.second.getStart() << "\t" << eit.second.getEnd() << "\t"
-                 << "." << "\t" << eit.second.getStrand() << "\t" << "." << "\t" <<  eit.second.getWeight() << std::endl;
+                 << "." << "\t" << eit.second.getStrand() << "\t" << "." << "\t" <<  "weight="<<eit.second.getWeight()
+                 <<";start="<< sub_seq.substr(0,20) <<";end=" << sub_seq.substr(sub_seq.length()-20,20) << std::endl;
 
         counter++;
     }
@@ -223,4 +226,37 @@ void HGraph::parse_graph() {
 // this function takes the parsed graph and output the SAM-formatted file for further analysis
 void HGraph::to_sam(std::string out_sam_fname) {
 
+}
+
+int HGraph::getGenomeSubstr(Edge et,int overhang, std::string& sub_seq){ // get substring from the genome based on the edges
+
+    FastaReader fastaReader(this->hdb->getGenomeFname());
+    FastaRecord cur_contig;
+
+    while (fastaReader.good()) {
+        fastaReader.next(cur_contig);
+
+        uint8_t contigID = this->hdb->getIDFromContig(cur_contig.id_); //this is the id of the new contig
+
+        if (contigID == et.first->first.getChr()){ // correct contig found
+            int start = et.first->first.getEnd()-overhang;
+            int length = (et.second->first.getStart()+overhang)-start;
+            sub_seq=cur_contig.seq_.substr(start, length);
+
+            if(et.first->first.getStrand()=='-'){ // need to reverse complement
+                char *rev_sub_seq = new char[sub_seq.length()+1];
+                strcpy(rev_sub_seq, sub_seq.c_str());
+                reverseComplement(rev_sub_seq, length);
+                sub_seq = rev_sub_seq;
+                delete[] rev_sub_seq;
+            }
+
+            return 1;
+        }
+    }
+    return 0;
+}
+
+int HGraph::getGenomeSubstr(uint8_t chrID,int8_t strand, uint32_t start, uint8_t length, std::string& sub_seq){
+    return 0;
 }

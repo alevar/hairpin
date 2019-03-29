@@ -12,6 +12,8 @@
 #include <fstream>
 #include <map>
 
+#include "FastaTools.h"
+
 #include "HDB.h"
 #include "MinMap.h"
 
@@ -277,6 +279,9 @@ private:
 
     VMap vertices;
     std::pair<std::map<VCoords,Vertex>::iterator,bool> vertex_it;
+
+    int getGenomeSubstr(Edge et,int overhang, std::string& sub_seq);
+    int getGenomeSubstr(uint8_t chrID,int8_t strand, uint32_t start, uint8_t length, std::string& sub_seq);
 
 };
 

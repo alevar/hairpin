@@ -69,9 +69,12 @@ public:
     void save_db();
     void load_db(std::string fb_fname_base);
 
+    std::string getGenomeFname(){return this->genome_fname_;}
+
     int getKmerLen();
 
     std::string getContigFromID(uint8_t id){return id_to_contig[id].first;}
+    uint8_t getIDFromContig(std::string id){return contig_to_id[id];}
 
 private:
     bool transcriptomeBuild=true; // whether a transcriptome index is requested

@@ -311,6 +311,7 @@ void HDB::save_db_info(){ // this method saves the general info about the databa
     std::ofstream dbinfo_fp(dbinfo_fname.c_str());
 
     dbinfo_fp<<"kmerlen"<<"\t"<<(int)this->kmerlen<<std::endl;
+    dbinfo_fp<<"genome"<<"\t"<<this->genome_fname_<<std::endl;
     dbinfo_fp<<"num trans kmer"<<"\t"<<(int)this->trans_map._getNumKmers()<<std::endl;
     dbinfo_fp<<"num genome kmer"<<"\t"<<(int)this->genom_map.size()<<std::endl;
 
@@ -431,7 +432,7 @@ void HDB::load_db_info(std::ifstream& stream){
     std::ios::sync_with_stdio(false);
     std::string line;
     std::stringstream ss("");
-    std::string kmerlen,prename;
+    std::string kmerlen,prename,genome_fn;
     while(std::getline(stream,line)) {
         ss.str(line);
         ss.clear();
@@ -440,12 +441,25 @@ void HDB::load_db_info(std::ifstream& stream){
         if (std::strcmp(prename.c_str(), "kmerlen") == 0) {
             std::getline(ss, kmerlen, '\t');
             this->kmerlen=std::stoi(kmerlen);
+        }
+        if (std::strcmp(prename.c_str(), "genome") == 0) { // save the genome filename
+            std::getline(ss, genome_fn, '\t');
+            this->genome_fname_=genome_fn;
+            // now test that the file still exists
+            std::ifstream genome_fp;
+            genome_fp.open(this->genome_fname_.c_str(),std::ios::in);
+            if(!genome_fp.good()){
+                std::cerr<<"genome fasta no longer can be found"<<std::endl;
+                exit(-1);
+            }
+            genome_fp.close();
+        }
+        if(!genome_fn.empty() && !kmerlen.empty()){
             return;
         }
     }
     std::cerr<<"kmerlen unknown from the databse"<<std::endl;
     exit(1);
-    return;
 }
 
 void HDB::load_contig_info(std::ifstream& stream){
