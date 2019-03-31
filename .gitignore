@@ -32,16 +32,10 @@
 *.app
 
 # test directories
-humanDB_genome/
-humanDB_trans/
-humanOut_genome/
-humanOut_trans/
-drosophilaDB_genome/
-drosophilaDB_trans/
-drosophilaOut_genome/
-drosophilaOut_trans/
-cmake-build-debug/
-cmake-build-release/
+human*/
+drosophila*/
+cmake*/
 .idea/
 
 data/drosophila_4_introns.gff
+data/chess2.1.3_assembly_introns.gff
