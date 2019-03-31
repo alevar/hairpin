@@ -43,6 +43,7 @@ void HGraph::add_read(std::string &read) {
     int start; // start of the first kmer
     int length; // length of the current match
     std::vector<std::map<VCoords,Vertex>::iterator> cur_matches; // each element in the current vector contains a single one of the multimappers
+    std::vector<std::map<VCoords,Vertex>::iterator> new_matches; // new matches being computed - they replace the current matches after the edges have been formed
 
     std::map<VCoords,Vertex>::iterator cur_vertex_it;
 
@@ -51,6 +52,7 @@ void HGraph::add_read(std::string &read) {
         // lookup in the transcriptome database
         this->trans_it=this->hdb->find_trans(kmer);
         if(this->trans_it!=this->hdb->trans_end()){ // match to transcriptome found
+            this->stats.numKmerMatchedTrans++;
             if(!cur_matches.empty()) {
                 for (auto &ev : this->trans_it->second) { // for each multimapper in the transcriptomic hit
 
@@ -136,6 +138,7 @@ void HGraph::add_read(std::string &read) {
 //            std::cerr<<"searching in genome"<<std::endl;
             this->genom_it=this->hdb->find_genom(kmer);
             if(this->genom_it!=this->hdb->genom_end()){ // match to genome found
+                this->stats.numKmerMatchedGenom++;
                 if(!cur_matches.empty()){ // need to evaluate the predecessors, if a match did not occur near one of the positions
                     for (auto &item : this->genom_it->second) { // for each multimapper
                         cur_vertex_it=this->add_vertex(std::get<0>(item),std::get<1>(item),std::get<2>(item),(uint8_t)this->stats.kmerlen);
@@ -182,7 +185,10 @@ void HGraph::add_read(std::string &read) {
                         cur_vertex_it=this->add_vertex(std::get<0>(item),std::get<1>(item),std::get<2>(item),(uint8_t)this->stats.kmerlen);
                         cur_matches.emplace_back(cur_vertex_it);
                     }
-                }
+                } // TODO: record the number of kmers that were not found in the database at all
+            }
+            else{
+                this->stats.numKmerUnmatched++;
             }
         }
     }
@@ -194,6 +200,9 @@ void HGraph::print_stats() {
     std::cout<<"Number of reads ignored: " <<this->stats.numReadsIgnored<<std::endl;
     std::cout<<"Number of vertices: "<<this->vertices.getSize()<<std::endl;
     std::cout<<"Number of edges: "<<this->emap.size()<<std::endl;
+    std::cout<<"Number of kmers matched to transcriptome: "<<this->stats.numKmerMatchedTrans<<std::endl;
+    std::cout<<"Number of kmers matched to genome: "<<this->stats.numKmerMatchedGenom<<std::endl;
+    std::cout<<"Number of kmers not matched to genome or transcriptome: "<<this->stats.numKmerUnmatched<<std::endl;
 }
 
 std::map<VCoords,Vertex>::iterator HGraph::add_vertex(uint8_t chrID,uint8_t strand,uint32_t pos,uint8_t length) {

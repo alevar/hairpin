@@ -272,6 +272,9 @@ private:
         int numReadsIgnored=0;
         int numEdges=0;
         int kmerlen;
+        int numKmerUnmatched=0;
+        int numKmerMatchedTrans=0;
+        int numKmerMatchedGenom=0;
     } stats;
 
     MinMap::iterator trans_it;
