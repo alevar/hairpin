@@ -120,9 +120,13 @@ void HGraph::add_read(std::string &read) {
                             extends.insert(cv.first); // add the new value to the extends
                             case_one.erase(case_one_it); // remove the entry from the case_one
                         }
+                        else{
+                            extends_final.insert(std::make_pair(cv.second.first,cv.second.second));
+                            extends.insert(cv.first);
+                        }
                     }
                     for (auto cv : case_one){extends[cv.first]++;} // now process the remaining entries in case one
-                    for (auto cv : case_three){extends.insert(cv);} // should this remove any from extends?
+//                    for (auto cv : case_three){extends.insert(cv);} // should this remove any from extends?
                 }
             }
             else{ // nothing was there before, so need to add new elements based on the results of the database search
