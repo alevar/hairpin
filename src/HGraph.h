@@ -286,6 +286,15 @@ private:
     int getGenomeSubstr(Edge et,int overhang, std::string& sub_seq);
     int getGenomeSubstr(uint8_t chrID,int8_t strand, uint32_t start, uint8_t length, std::string& sub_seq);
 
+    typedef std::tuple<uint8_t,uint8_t,uint32_t> CoordVec;
+    int coord_distance(const CoordVec& cv1,const CoordVec& cv2);
+
+    struct coord_cmp { // the comparator in this case simply compares if the splice site coordinates are identical
+        bool operator()(const CoordVec& prev, const CoordVec& next) const {
+            return std::get<0>(prev) < std::get<0>(next) || std::get<1>(prev) < std::get<1>(next) || std::get<2>(prev) < std::get<2>(next);
+        }
+    };
+
 };
 
 #endif //HAIRPIN_GRAPH_H

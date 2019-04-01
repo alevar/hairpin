@@ -37,8 +37,8 @@ int hairpin_quant(int argc,char* argv[]){
     args_quant.add_string(Opt_Quant::READ2,"input2","","");
     args_quant.add_string(Opt_Quant::UNPAIR,"unpaired","","");
     args_quant.add_string(Opt_Quant::REF,"reference","","");
-    args_quant.add_int(Opt_Quant::MAX,"max_intron",500000,"");
-    args_quant.add_int(Opt_Quant::MIN,"min_intron",10,"");
+    args_quant.add_int(Opt_Quant::MAX,"max_intron",30000,"");
+    args_quant.add_int(Opt_Quant::MIN,"min_intron",20,"");
 
     args_quant.parse_args(argc,argv);
 
@@ -51,7 +51,7 @@ int hairpin_quant(int argc,char* argv[]){
     process_reads_single(args_quant.get_string(Opt_Quant::UNPAIR),hg);
     std::cerr<<"parsing the graph"<<std::endl;
     hg.parse_graph();
-    hg.write_intron_gff();
+//    hg.write_intron_gff();
     hg.print_stats();
 
     // when parsing a read - need to set the minimum number of kmers that need ot be mapped from that read

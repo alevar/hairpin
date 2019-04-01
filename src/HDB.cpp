@@ -132,7 +132,7 @@ void HDB::make_db(std::string out_fname, int kmerlen) {
 // additionally, the method ignores any kmeres with Ns
 void HDB::process_contig(std::string seq, uint8_t chrID, uint8_t strand, uint8_t rev_strand, bool checkTrans){
     if(checkTrans){
-        for(uint32_t i=0;i<seq.length()-this->kmerlen;i++){ // iterate over the kmers in the current sequence and put them all into the map
+        for(uint32_t i=0;i<(seq.length()-this->kmerlen)+1;i++){ // iterate over the kmers in the current sequence and put them all into the map
             if(i%1000000==0){
                 std::cout<<"process_contig:"<<i<<std::endl;
             }
@@ -162,7 +162,7 @@ void HDB::process_contig(std::string seq, uint8_t chrID, uint8_t strand, uint8_t
         }
     }
     else {
-        for(uint32_t i=0;i<seq.length()-this->kmerlen;i++){ // iterate over the kmers in the current sequence and put them all into the map
+        for(uint32_t i=0;i<(seq.length()-this->kmerlen)+1;i++){ // iterate over the kmers in the current sequence and put them all into the map
             if(i%1000000==0){
                 std::cout<<"process_contig:"<<i<<std::endl;
             }
