@@ -295,6 +295,8 @@ private:
         }
     };
 
+    typedef std::pair<uint8_t,uint8_t> PosPair; // first -> length of the associated Coords Vector; second - position of the kmer within the current read
+
 };
 
 #endif //HAIRPIN_GRAPH_H

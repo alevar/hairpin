@@ -50,31 +50,33 @@ void HGraph::add_read(std::string &read) {
 
     std::map<VCoords,Vertex>::iterator cur_vertex_it,cv_it1,cv_it2;
 
-    std::map<CoordVec,uint8_t> extends_final; // holds final extension which should no longer be modified
-    std::map<CoordVec,uint8_t> extends; // groups of vertices that form stretches - will form edges between them afterwards; second element is the current length of the extendion
+    std::map<CoordVec,PosPair> extends_final; // holds final extension which should no longer be modified
+    std::map<CoordVec,PosPair> extends; // groups of vertices that form stretches - will form edges between them afterwards; second element is the current length of the extendion
 
     for(int i=0;i<(read.length()-this->stats.kmerlen)+1;i++){
     kmer=read.substr(i, static_cast<unsigned long>(this->stats.kmerlen));
+
+    // TODO: finish incorporating the position within read "i" into the PosPair and using it when creating the splice junctions
 
         this->genom_it=this->hdb->find_genom(kmer);
         if(this->genom_it!=this->hdb->genom_end()){ // match to genome found
             this->stats.numKmerMatchedGenom++;
             if(!extends.empty()){ // need to evaluate the predecessors, if a match did not occur near one of the positions
 
-                std::vector<std::pair<CoordVec,int> > case_one; // coordinates for which a distance of 1 was observed
-                std::vector<std::pair<CoordVec,int> >::iterator case_one_it;
-                std::vector<std::pair<std::pair<CoordVec,int>,std::pair<CoordVec,int> > > case_two; // coordinates for which no distance of 1 was observed - thus needs to create a new entry - contains the closest coordinate vector found for here
-                std::vector<std::pair<CoordVec,int> > case_three; // coordinates for which no distance of 1 was observed and no closest match was observed either
+                std::vector<std::pair<CoordVec,PosPair> > case_one; // coordinates for which a distance of 1 was observed
+                std::vector<std::pair<CoordVec,PosPair> >::iterator case_one_it;
+                std::vector<std::pair<std::pair<CoordVec,PosPair>,std::pair<CoordVec,PosPair> > > case_two; // coordinates for which no distance of 1 was observed - thus needs to create a new entry - contains the closest coordinate vector found for here
+                std::vector<std::pair<CoordVec,PosPair> > case_three; // coordinates for which no distance of 1 was observed and no closest match was observed either
 
                 std::set<int> seen_idx; // which indices of the previous multimappers have been observed - is used to detect previous entries for which no extension was found
                 for (auto &item : this->genom_it->second) { // for each multimapper
 
-                    std::pair<CoordVec,int> tmp_case_one; // temporary assignments
-                    std::vector<std::pair<CoordVec,int> > tmp_case_two;
+                    std::pair<CoordVec,PosPair> tmp_case_one; // temporary assignments
+                    std::vector<std::pair<CoordVec,PosPair> > tmp_case_two;
                     bool tmp_case_one_flag=false,tmp_case_two_flag=false,tmp_case_three_flag=false; // flag set when created
 
                     for (auto cv : extends){
-                        int dist=coord_distance(item,cv.first)-(cv.second-this->stats.kmerlen); // accounts for the length
+                        int dist=coord_distance(item,cv.first)-(cv.second.first-this->stats.kmerlen); // accounts for the length
                         if (dist==0){continue;}
                         else if (dist==1){ // do an extend
                             tmp_case_one=cv; // remember that this position has already been extended and needs not be evaluated in future multimappers
@@ -96,17 +98,20 @@ void HGraph::add_read(std::string &read) {
                     }
                     if (tmp_case_two_flag) { // no distance 1 was found - need to remember current multimapper value
                         for(auto cv: tmp_case_two) {
-                            case_two.emplace_back(std::make_pair(std::make_pair(item, this->stats.kmerlen), cv));
+                            case_two.emplace_back(std::make_pair(std::make_pair(item, std::make_pair(this->stats.kmerlen,i)), cv));
                         }
                     }
-                    if (tmp_case_three_flag){ case_three.emplace_back(std::make_pair(item,this->stats.kmerlen));}
+                    if (tmp_case_three_flag){ case_three.emplace_back(std::make_pair(item,std::make_pair(this->stats.kmerlen,i)));}
                 }
                 // also need to know if any given previous entry has never been observed in the current round of evaluation
                 // if such is the case - such entry needs to be pushed into the final_extends immediately and removed from the current search space
 
                 // second case evaluation is performed here now that all current multimappers have been observed
                 if(case_one.size()==this->genom_it->second.size()){ // all case ones
-                    for (auto cv : case_one){ extends[cv.first]++;}
+                    for (auto cv : case_one){
+                        extends[cv.first].first++;
+//                        extends[cv.first].second++; // update the position of the last kmer in the extend
+                    }
                 }
                 else{ // add the case three entries
                     // first need to evaluate case two:
@@ -116,7 +121,8 @@ void HGraph::add_read(std::string &read) {
                         case_one_it=std::find(case_one.begin(),case_one.end(),cv.second); // find the corresponding case_one - deal with it and remove from case ones
                         if (case_one_it != case_one.end()){ // found the case one entry
                             extends_final.insert(std::make_pair(case_one_it->first,case_one_it->second)); // need to move it to extends final first
-                            extends[case_one_it->first]++; // increment the current length in case_one
+                            extends[case_one_it->first].first++; // increment the current length in case_one
+//                            extends[case_one_it->first].second++; // update the position of the last kmer in the extend
                             extends.insert(cv.first); // add the new value to the extends
                             case_one.erase(case_one_it); // remove the entry from the case_one
                         }
@@ -125,13 +131,16 @@ void HGraph::add_read(std::string &read) {
                             extends.insert(cv.first);
                         }
                     }
-                    for (auto cv : case_one){extends[cv.first]++;} // now process the remaining entries in case one
+                    for (auto cv : case_one){
+                        extends[cv.first].first++;
+//                        extends[cv.first].second++; // update the position of the last kmer in the extend
+                    } // now process the remaining entries in case one
 //                    for (auto cv : case_three){extends.insert(cv);} // should this remove any from extends?
                 }
             }
             else{ // nothing was there before, so need to add new elements based on the results of the database search
                 for (auto &item : this->genom_it->second) { // for each multimapper
-                    extends.insert(std::make_pair(item,this->stats.kmerlen)); // initialize starting diagonals
+                    extends.insert(std::make_pair(item,std::make_pair(this->stats.kmerlen,i))); // initialize starting diagonals
                 }
             }
         }
@@ -144,24 +153,27 @@ void HGraph::add_read(std::string &read) {
 //    std::cout<<extends_final.size()<<std::endl;
     if (extends_final.size()==1){
         for(auto &cv : extends_final) {
-            cur_vertex_it = this->add_vertex(std::get<0>(cv.first), std::get<1>(cv.first), std::get<2>(cv.first),(uint8_t)cv.second);
+            cur_vertex_it = this->add_vertex(std::get<0>(cv.first), std::get<1>(cv.first), std::get<2>(cv.first),(uint8_t)cv.second.first);
         }
     }
     else{
-        std::map<CoordVec,uint8_t>::iterator ci1,ci2;
+        std::map<CoordVec,PosPair>::iterator ci1,ci2;
         int counter=0;
         for (ci1=extends_final.begin();ci1!=std::prev(extends_final.end());ci1++){
             // create the first vertex
-            cv_it1=this->add_vertex(std::get<0>(ci1->first), std::get<1>(ci1->first), std::get<2>(ci1->first),(uint8_t)ci1->second);
+            cv_it1=this->add_vertex(std::get<0>(ci1->first), std::get<1>(ci1->first), std::get<2>(ci1->first),(uint8_t)ci1->second.first);
             // TODO: instead creating vertices here - create them when combining the extends -  this way the nodes are only created once and the weights are not jeopardized
             for(ci2=std::next(ci1);ci2!=extends_final.end();ci2++){
 
-                cv_it2=this->add_vertex(std::get<0>(ci2->first), std::get<1>(ci2->first), std::get<2>(ci2->first),(uint8_t)ci2->second);
+                cv_it2=this->add_vertex(std::get<0>(ci2->first), std::get<1>(ci2->first), std::get<2>(ci2->first),(uint8_t)ci2->second.first);
 
                 int dist=coord_distance(ci2->first,ci1->first);
                 if (dist<-1){std::cerr<<"problem"<<std::endl;}
 
-                if ((dist-ci1->second) > this->minIntron && (dist-ci1->second) < this->maxIntron){
+                int kmerDist = (ci2->second.second - (ci1->second.second + (ci1->second.first-this->stats.kmerlen)) ); // number of kmers separating the two vertices in the given read
+
+                if ((dist-ci1->second.first) > this->minIntron && (dist-ci1->second.first) < this->maxIntron && // is compatible with the intron thresholds
+                                    kmerDist <= this->stats.kmerlen ){ // follows the expected number of missed kmers
                     this->add_edge(cv_it1,cv_it2); // form an edge
                 }
             }
