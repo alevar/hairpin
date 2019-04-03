@@ -289,9 +289,10 @@ private:
     typedef std::tuple<uint8_t,uint8_t,uint32_t> CoordVec;
     int coord_distance(const CoordVec& cv1,const CoordVec& cv2);
 
-    struct coord_cmp { // the comparator in this case simply compares if the splice site coordinates are identical
-        bool operator()(const CoordVec& prev, const CoordVec& next) const {
-            return std::get<0>(prev) < std::get<0>(next) || std::get<1>(prev) < std::get<1>(next) || std::get<2>(prev) < std::get<2>(next);
+    struct map_vit_cmp { // this comparator can be applied whenever there is a need to build a sorted object (eg. std::map) with std::map<VCoords,Vertex>::iterator as a key
+        bool operator()(const std::map<VCoords,Vertex>::iterator& prev, const std::map<VCoords,Vertex>::iterator& next) const {
+            return prev->first.getChr() < next->first.getChr() || prev->first.getStrand() < next->first.getStrand() ||
+                prev->first.getStart() < next->first.getStart() || prev->first.getEnd() < next->first.getEnd();
         }
     };
 

@@ -48,15 +48,13 @@ void HGraph::add_read(std::string &read) {
     }
     std::string kmer;
 
-    std::map<VCoords,Vertex>::iterator cur_vertex_it,cv_it1,cv_it2;
+    std::map<VCoords,Vertex>::iterator cur_vertex_it;
 
-    std::map<CoordVec,PosPair> extends_final; // holds final extension which should no longer be modified
+    std::map<std::map<VCoords,Vertex>::iterator,uint8_t,map_vit_cmp> extends_final; // holds final extension which should no longer be modified
     std::map<CoordVec,PosPair> extends; // groups of vertices that form stretches - will form edges between them afterwards; second element is the current length of the extendion
 
     for(int i=0;i<(read.length()-this->stats.kmerlen)+1;i++){
     kmer=read.substr(i, static_cast<unsigned long>(this->stats.kmerlen));
-
-    // TODO: finish incorporating the position within read "i" into the PosPair and using it when creating the splice junctions
 
         this->genom_it=this->hdb->find_genom(kmer);
         if(this->genom_it!=this->hdb->genom_end()){ // match to genome found
@@ -120,14 +118,16 @@ void HGraph::add_read(std::string &read) {
                     for (auto cv : case_two){
                         case_one_it=std::find(case_one.begin(),case_one.end(),cv.second); // find the corresponding case_one - deal with it and remove from case ones
                         if (case_one_it != case_one.end()){ // found the case one entry
-                            extends_final.insert(std::make_pair(case_one_it->first,case_one_it->second)); // need to move it to extends final first
+                            cur_vertex_it = this->add_vertex(std::get<0>(cv.second.first), std::get<1>(cv.second.first), std::get<2>(cv.second.first),(uint8_t)cv.second.second.first);
+                            extends_final.insert(std::make_pair(cur_vertex_it,case_one_it->second.second)); // need to move it to extends final first
                             extends[case_one_it->first].first++; // increment the current length in case_one
 //                            extends[case_one_it->first].second++; // update the position of the last kmer in the extend
                             extends.insert(cv.first); // add the new value to the extends
                             case_one.erase(case_one_it); // remove the entry from the case_one
                         }
                         else{
-                            extends_final.insert(std::make_pair(cv.second.first,cv.second.second));
+                            cur_vertex_it = this->add_vertex(std::get<0>(cv.second.first), std::get<1>(cv.second.first), std::get<2>(cv.second.first),(uint8_t)cv.second.second.first);
+                            extends_final.insert(std::make_pair(cur_vertex_it,cv.second.second.second));
                             extends.insert(cv.first);
                         }
                     }
@@ -149,33 +149,23 @@ void HGraph::add_read(std::string &read) {
     // the read has been evaluated
     // now we can proceed to generate vertices and edges based on the final extensions
     //merge extends with the extends_final
-    extends_final.insert( extends.begin(), extends.end() ); // TODO: extends_final must be replaced by a vector since the same coord vector with different lengths can exist in which a map will merge the two
-//    std::cout<<extends_final.size()<<std::endl;
-    if (extends_final.size()==1){
-        for(auto &cv : extends_final) {
-            cur_vertex_it = this->add_vertex(std::get<0>(cv.first), std::get<1>(cv.first), std::get<2>(cv.first),(uint8_t)cv.second.first);
-        }
+    for (auto ex : extends){
+        cur_vertex_it = this->add_vertex(std::get<0>(ex.first), std::get<1>(ex.first), std::get<2>(ex.first),(uint8_t)ex.second.first);
+        extends_final.insert(std::make_pair(cur_vertex_it,ex.second.second));
     }
-    else{
-        std::map<CoordVec,PosPair>::iterator ci1,ci2;
-        int counter=0;
-        for (ci1=extends_final.begin();ci1!=std::prev(extends_final.end());ci1++){
-            // create the first vertex
-            cv_it1=this->add_vertex(std::get<0>(ci1->first), std::get<1>(ci1->first), std::get<2>(ci1->first),(uint8_t)ci1->second.first);
-            // TODO: instead creating vertices here - create them when combining the extends -  this way the nodes are only created once and the weights are not jeopardized
-            for(ci2=std::next(ci1);ci2!=extends_final.end();ci2++){
+    std::map<std::map<VCoords,Vertex>::iterator,uint8_t>::iterator ci1,ci2;
+    int counter=0;
+    for (ci1=extends_final.begin();ci1!=std::prev(extends_final.end());ci1++){
+        // create the first vertex
+        for(ci2=std::next(ci1);ci2!=extends_final.end();ci2++){
 
-                cv_it2=this->add_vertex(std::get<0>(ci2->first), std::get<1>(ci2->first), std::get<2>(ci2->first),(uint8_t)ci2->second.first);
+            int dist=ci2->first->first - ci1->first->first - ci1->first->first.getLength();
 
-                int dist=coord_distance(ci2->first,ci1->first);
-                if (dist<-1){std::cerr<<"problem"<<std::endl;}
+            int kmerDist = (ci2->second - (ci1->second + (ci1->first->first.getLength()-this->stats.kmerlen)) ); // number of kmers separating the two vertices in the given read
 
-                int kmerDist = (ci2->second.second - (ci1->second.second + (ci1->second.first-this->stats.kmerlen)) ); // number of kmers separating the two vertices in the given read
-
-                if ((dist-ci1->second.first) > this->minIntron && (dist-ci1->second.first) < this->maxIntron && // is compatible with the intron thresholds
-                                    kmerDist <= this->stats.kmerlen ){ // follows the expected number of missed kmers
-                    this->add_edge(cv_it1,cv_it2); // form an edge
-                }
+            if (dist > this->minIntron && dist < this->maxIntron && // is compatible with the intron thresholds
+                                kmerDist <= this->stats.kmerlen ){ // follows the expected number of missed kmers
+                this->add_edge(ci1->first,ci2->first); // form an edge
             }
         }
     }
