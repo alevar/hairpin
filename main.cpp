@@ -28,7 +28,8 @@ int hairpin_quant(int argc,char* argv[]){
         UNPAIR= 'u',
         REF   = 'r',
         MAX   = 'm',
-        MIN   = 'i'};
+        MIN   = 'i',
+        MM    = 'l'};
 
     ArgParse args_quant("hairpin_align");
     args_quant.add_string(Opt_Quant::HDB_FP,"hdb","","");
@@ -39,6 +40,7 @@ int hairpin_quant(int argc,char* argv[]){
     args_quant.add_string(Opt_Quant::REF,"reference","","");
     args_quant.add_int(Opt_Quant::MAX,"max_intron",30000,"");
     args_quant.add_int(Opt_Quant::MIN,"min_intron",20,"");
+    args_quant.add_int(Opt_Quant::MM,"min_mismatch",10,"");
 
     args_quant.parse_args(argc,argv);
 
@@ -46,7 +48,7 @@ int hairpin_quant(int argc,char* argv[]){
     std::cerr<<"Loading the database"<<std::endl;
     hdb.load_db(args_quant.get_string(Opt_Quant::HDB_FP));
 
-    HGraph hg(&hdb,args_quant.get_int(Opt_Quant::MAX),args_quant.get_int(Opt_Quant::MIN),args_quant.get_string(Opt_Quant::OUTPUT));
+    HGraph hg(&hdb,args_quant.get_int(Opt_Quant::MAX),args_quant.get_int(Opt_Quant::MIN),args_quant.get_int(Opt_Quant::MM),args_quant.get_string(Opt_Quant::OUTPUT));
     std::cerr<<"processing reads"<<std::endl;
     process_reads_single(args_quant.get_string(Opt_Quant::UNPAIR),hg);
     std::cerr<<"parsing the graph"<<std::endl;

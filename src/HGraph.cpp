@@ -11,12 +11,13 @@ HGraph::HGraph(HDB* hdb){
     this->stats.kmerlen=this->hdb->getKmerLen();
 }
 
-HGraph::HGraph(HDB* hdb,int max_intron,int min_intron, std::string out_fname){
+HGraph::HGraph(HDB* hdb,int max_intron,int min_intron,int min_mismatch,std::string out_fname){
     this->hdb=hdb;
     this->stats.kmerlen=this->hdb->getKmerLen();
     this->maxIntron=max_intron;
     this->minIntron=min_intron;
     this->out_fname=out_fname;
+    this->minMismatch=min_mismatch;
 }
 
 HGraph::~HGraph() = default;
@@ -163,8 +164,8 @@ void HGraph::add_read(std::string &read) {
 
             int kmerDist = (ci2->second - (ci1->second + (ci1->first->first.getLength()-this->stats.kmerlen)) ); // number of kmers separating the two vertices in the given read
 
-            if (dist > this->minIntron && dist < this->maxIntron && // is compatible with the intron thresholds
-                                kmerDist <= this->stats.kmerlen ){ // follows the expected number of missed kmers
+            if (dist > 0 && dist <= this->maxIntron && // is not backward and is not greater than the maximum intron length; no minum threshold to permit edges to form for errors
+                    kmerDist <= this->stats.kmerlen && kmerDist >= this->minMismatch){ // follows the expected number of missed kmers
                 this->add_edge(ci1->first,ci2->first); // form an edge
             }
         }

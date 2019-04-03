@@ -233,7 +233,7 @@ class HGraph { // TODO: add interface to substring the database to query for spl
 public:
     HGraph();
     explicit HGraph(HDB* hdb);
-    HGraph(HDB* hdb,int max_intron,int min_intron,std::string out_fname);
+    HGraph(HDB* hdb,int max_intron,int min_intron,int min_mismatch,std::string out_fname);
     ~HGraph();
 
     void add_read(std::string& read);
@@ -247,6 +247,8 @@ public:
     void write_intron_gff();
 
 private:
+
+    int minMismatch=0;
 
     std::map<VCoords,Vertex>::iterator add_vertex(uint8_t chrID,uint8_t strand,uint32_t pos,uint8_t length);
 
