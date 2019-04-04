@@ -213,6 +213,41 @@ void HGraph::write_intron_gff() {
     edges_fp.close();
 }
 
+//Ruleset for evaluation of potential splice junctions
+//        1. Each vertex may only be allowed to have a single outgoing or ingoing edge
+//        2. There may not be parallel edges - that is no two edges may overlap by coordinates
+//        3. No two edges may exist with less than k bases between the end of the first edge and the start of the next edge
+//        4. donor/acceptor sites are weighted (canonical/semi-canonical/non-canonical)
+//        5. Vertices at each end of the junction shall have identical weights corresponding to the evaluated edge
+//        6. Number of distinct start positions of reads that cover a splice junction can also be taken into account when computing the likelihood score
+//        7. We can also create a threshold for the number of unique start sites preceding a splice junction
+//        8. If two contradictory junctions exist with otherwise identical scores - the shorter one shall be prefered
+//
+//
+//Important
+//        Since kmers can extend into the intron, it makes it difficult to infer the true splice junction, since the number of possible donor-acceptor pairs increases proportionally to the length of the kmers used. However, what we can do is the following:
+//We know that the bases by which the sequence is extended into the intron must be the same as the sequence of starting bases in the exon
+//        This information can be computed during the evaluation
+//        Algorithm
+//          1. Get potential donor
+//          2. Get sequence of all bases that belong to the donating vertex past the potential donor
+//          3. Get potential acceptor
+//          4. Get sequence of bases that belong to the accepting vertex past the potential acceptor site. The substring must begin right after the acceptor site and must contain the same number of bases as the one extracted from the donating vertex
+//          5. If the two sequences are not the same
+//              - Discard - can not be true
+//
+//
+//Output of the edge parser:
+//The edge iterator is a pointer to a <key,value> pair from the edge map, where the value is of the type Aggregate_edge_props and contains a function validate();
+//Whenever the parser decides that the splice junction is valid it should use this function to set the known flag to true
+//
+//
+//Splice junctions [1]:
+//GT-AG - canonical
+//        GC-AG - semi-canonical
+//        AT-AC - semi-canonical
+
+
 // parse graph and evaluate gaps and assign splice junctions and mismatches and gaps
 void HGraph::parse_graph() {
     // this is a toy example for prsing the data
