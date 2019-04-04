@@ -196,10 +196,12 @@ public:
         this->addPrev(prev);
     }
 
-    void setKnown(){} // set the current edge as known/annotated
-    bool isKnown(){} // is the current edge known/annotated
+    void setKnown(){this->known=true;} // set the current edge as known/annotated
+    bool isKnown(){return this->known} // is the current edge known/annotated
+    void validate(){
+        this->valid=true;
+    } // for an unknown edge - modify the edge and the vertices to the inferred ones; refine coordinates and set the validation flag
     int getWeight(){
-        // TODO: needs to compute weight across all vertices that belong to the edge
         int total=0;
         for(auto vt : this->nexts){ // there is a problem here - we can not go to the exact edge in the vertex which is needed to compute the weight of a given edge
             int wt = vt->second.getInEdgeWeight(prevs[0]->first.getStart());
@@ -224,12 +226,13 @@ public:
 
 private:
     bool known{};
+    bool valid{};
 
     typedef std::vector<std::map<VCoords,Vertex>::iterator> VP; // vertex pointers
     VP nexts{},prevs{};
 };
 
-class HGraph { // TODO: add interface to substring the database to query for splice junctions
+class HGraph {
 public:
     HGraph();
     explicit HGraph(HDB* hdb);

@@ -224,11 +224,11 @@ void HGraph::parse_graph() {
     std::string sub_seq;
     for(auto eit : this->emap){
         // first get fasta sequence
-        this->getGenomeSubstr(eit.first,10,sub_seq);
+        this->getGenomeSubstr(eit.first,this->stats.kmerlen-2,sub_seq);
         edges_fp << this->hdb->getContigFromID(eit.second.getChr()) << "\t" << "hairpin" << "\t" << "intron" << "\t"
                  << eit.second.getStart() << "\t" << eit.second.getEnd() << "\t"
                  << "." << "\t" << eit.second.getStrand() << "\t" << "." << "\t" <<  "weight="<<eit.second.getWeight()
-                 <<";start="<< sub_seq.substr(0,20) <<";end=" << sub_seq.substr(sub_seq.length()-20,20) << std::endl;
+                 <<";start="<< sub_seq.substr(0,this->stats.kmerlen) <<";end=" << sub_seq.substr(sub_seq.length()-(this->stats.kmerlen-2),this->stats.kmerlen) << std::endl;
 
         counter++;
     }

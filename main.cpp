@@ -40,7 +40,7 @@ int hairpin_quant(int argc,char* argv[]){
     args_quant.add_string(Opt_Quant::REF,"reference","","");
     args_quant.add_int(Opt_Quant::MAX,"max_intron",30000,"");
     args_quant.add_int(Opt_Quant::MIN,"min_intron",20,"");
-    args_quant.add_int(Opt_Quant::MM,"min_mismatch",10,"");
+    args_quant.add_int(Opt_Quant::MM,"min_mismatch",0,"");
 
     args_quant.parse_args(argc,argv);
 
