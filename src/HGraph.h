@@ -197,7 +197,7 @@ public:
     }
 
     void setKnown(){this->known=true;} // set the current edge as known/annotated
-    bool isKnown(){return this->known} // is the current edge known/annotated
+    bool isKnown(){return this->known;} // is the current edge known/annotated
     void validate(){
         this->valid=true;
     } // for an unknown edge - modify the edge and the vertices to the inferred ones; refine coordinates and set the validation flag
@@ -244,7 +244,7 @@ public:
 
     void add_edge(std::map<VCoords,Vertex>::iterator vit1,std::map<VCoords,Vertex>::iterator vit2);
 
-    void to_sam(std::string out_sam_fname);
+    void to_sam();
     void sort_graph();
     void parse_graph();
     void write_intron_gff();
@@ -302,6 +302,8 @@ private:
     };
 
     typedef std::pair<uint8_t,uint8_t> PosPair; // first -> length of the associated Coords Vector; second - position of the kmer within the current read
+
+    std::string generate_sam_header(std::ofstream& sam_fp);
 
 };
 

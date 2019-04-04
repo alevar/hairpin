@@ -213,7 +213,7 @@ void HGraph::write_intron_gff() {
     edges_fp.close();
 }
 
-//Ruleset for evaluation of potential splice junctions
+//TODO: Ruleset for evaluation of potential splice junctions
 //        1. Each vertex may only be allowed to have a single outgoing or ingoing edge
 //        2. There may not be parallel edges - that is no two edges may overlap by coordinates
 //        3. No two edges may exist with less than k bases between the end of the first edge and the start of the next edge
@@ -224,9 +224,9 @@ void HGraph::write_intron_gff() {
 //        8. If two contradictory junctions exist with otherwise identical scores - the shorter one shall be prefered
 //
 //
-//Important
+//TODO: Important
 //        Since kmers can extend into the intron, it makes it difficult to infer the true splice junction, since the number of possible donor-acceptor pairs increases proportionally to the length of the kmers used. However, what we can do is the following:
-//We know that the bases by which the sequence is extended into the intron must be the same as the sequence of starting bases in the exon
+//              We know that the bases by which the sequence is extended into the intron must be the same as the sequence of starting bases in the exon
 //        This information can be computed during the evaluation
 //        Algorithm
 //          1. Get potential donor
@@ -237,16 +237,19 @@ void HGraph::write_intron_gff() {
 //              - Discard - can not be true
 //
 //
-//Output of the edge parser:
-//The edge iterator is a pointer to a <key,value> pair from the edge map, where the value is of the type Aggregate_edge_props and contains a function validate();
-//Whenever the parser decides that the splice junction is valid it should use this function to set the known flag to true
+//TODO: Output of the edge parser:
+//  The edge iterator is a pointer to a <key,value> pair from the edge map, where the value is of the type Aggregate_edge_props and contains a function validate();
+//  Whenever the parser decides that the splice junction is valid it should use this function to set the known flag to true
 //
 //
-//Splice junctions [1]:
-//GT-AG - canonical
+//TODO: Splice junctions [1]:
+//        GT-AG - canonical
 //        GC-AG - semi-canonical
 //        AT-AC - semi-canonical
-
+//
+//
+//TODO: The parser has to make sure that the total number of bases contained in connected vertices is above a threshold
+//      this is imporant to ensure spurious/incomplete multimappers are not present in the final graph
 
 // parse graph and evaluate gaps and assign splice junctions and mismatches and gaps
 void HGraph::parse_graph() {
@@ -271,9 +274,21 @@ void HGraph::parse_graph() {
     edges_fp.close();
 }
 
-// this function takes the parsed graph and output the SAM-formatted file for further analysis
-void HGraph::to_sam(std::string out_sam_fname) {
+std::string HGraph::generate_sam_header(std::ofstream& sam_fp){ // generate the header from the database information
+    sam_fp<<"header"<<std::endl;
+}
 
+// this function takes the parsed graph and output the SAM-formatted file for further analysis
+void HGraph::to_sam() {
+    std::string sam_fname(this->out_fname);
+    sam_fname.append(".sam");
+    std::ofstream sam_fp(sam_fname.c_str());
+
+    this->generate_sam_header(sam_fp);
+
+    sam_fp<<"body"<<std::endl;
+
+    sam_fp.close();
 }
 
 int HGraph::getGenomeSubstr(Edge et,int overhang, std::string& sub_seq){ // get substring from the genome based on the edges
