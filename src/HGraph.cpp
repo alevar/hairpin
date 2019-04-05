@@ -319,8 +319,8 @@ void HGraph::evaluate_sj(const std::pair<Edge,Aggregate_edge_props>& eit,const s
 
 // this function runs splice junction verification for all donor/acceptor pairs
 void HGraph::evaluate_donor_acceptor(const std::pair<Edge,Aggregate_edge_props>& eit, SJS& sm){
-    for (auto dit : this->donors) { // iterate over all the donors
-        for (auto ait : this->acceptors) { // iterate over all acceptors
+    for (const auto& dit : this->donors) { // iterate over all the donors
+        for (const auto& ait : this->acceptors) { // iterate over all acceptors
             evaluate_sj(eit,dit,ait,sm);
         }
     }
