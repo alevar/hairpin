@@ -305,6 +305,16 @@ private:
 
     std::string generate_sam_header(std::ofstream& sam_fp);
 
+    std::map<std::string,float> donors = {
+            {"GT",1.0},
+            {"GC",0.5},
+            {"AT",0.5},
+    };
+    std::map<std::string,float> acceptors = {
+            {"AG",1.0},
+            {"AC",0.5},
+    };
+
 };
 
 #endif //HAIRPIN_GRAPH_H

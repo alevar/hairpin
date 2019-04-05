@@ -55,7 +55,7 @@ void HGraph::add_read(std::string &read) {
     std::map<CoordVec,PosPair> extends; // groups of vertices that form stretches - will form edges between them afterwards; second element is the current length of the extendion
 
     for(int i=0;i<(read.length()-this->stats.kmerlen)+1;i++){
-    kmer=read.substr(i, static_cast<unsigned long>(this->stats.kmerlen));
+        kmer=read.substr(i, static_cast<unsigned long>(this->stats.kmerlen));
 
         this->genom_it=this->hdb->find_genom(kmer);
         if(this->genom_it!=this->hdb->genom_end()){ // match to genome found
@@ -145,7 +145,9 @@ void HGraph::add_read(std::string &read) {
                 }
             }
         }
-        else{this->stats.numKmerUnmatched++;}
+        else{
+            this->stats.numKmerUnmatched++;
+        }
     }
     // the read has been evaluated
     // now we can proceed to generate vertices and edges based on the final extensions
@@ -201,11 +203,11 @@ void HGraph::write_intron_gff() {
     std::string sub_seq;
     for(auto eit : this->emap){
         // first get fasta sequence
-        this->getGenomeSubstr(eit.first,10,sub_seq);
+        this->getGenomeSubstr(eit.first,this->stats.kmerlen-2,sub_seq);
         edges_fp << this->hdb->getContigFromID(eit.second.getChr()) << "\t" << "hairpin" << "\t" << "intron" << "\t"
                  << eit.second.getStart() << "\t" << eit.second.getEnd() << "\t"
                  << "." << "\t" << eit.second.getStrand() << "\t" << "." << "\t" <<  "weight="<<eit.second.getWeight()
-                 <<";start="<< sub_seq.substr(0,20) <<";end=" << sub_seq.substr(sub_seq.length()-20,20) << std::endl;
+                 <<";start="<< sub_seq.substr(0,this->stats.kmerlen) <<";end=" << sub_seq.substr(sub_seq.length()-(this->stats.kmerlen),this->stats.kmerlen) << ";full=" << sub_seq << std::endl;
 
         counter++;
     }
@@ -249,28 +251,52 @@ void HGraph::write_intron_gff() {
 //
 //
 //TODO: The parser has to make sure that the total number of bases contained in connected vertices is above a threshold
-//      this is imporant to ensure spurious/incomplete multimappers are not present in the final graph
+//      this is important to ensure spurious/incomplete multimappers are not present in the final graph
 
 // parse graph and evaluate gaps and assign splice junctions and mismatches and gaps
 void HGraph::parse_graph() {
-    // this is a toy example for prsing the data
     std::string edges_fname(this->out_fname);
-    edges_fname.append(".intron.gff");
+    edges_fname.append(".intron.parsed.gff");
     std::ofstream edges_fp(edges_fname.c_str());
 
+    std::string sub_seq, start_seq, end_seq;
+
     int counter=0;
-    std::string sub_seq;
+
     for(auto eit : this->emap){
-        // first get fasta sequence
-        this->getGenomeSubstr(eit.first,this->stats.kmerlen-2,sub_seq);
-        edges_fp << this->hdb->getContigFromID(eit.second.getChr()) << "\t" << "hairpin" << "\t" << "intron" << "\t"
-                 << eit.second.getStart() << "\t" << eit.second.getEnd() << "\t"
-                 << "." << "\t" << eit.second.getStrand() << "\t" << "." << "\t" <<  "weight="<<eit.second.getWeight()
-                 <<";start="<< sub_seq.substr(0,this->stats.kmerlen) <<";end=" << sub_seq.substr(sub_seq.length()-(this->stats.kmerlen-2),this->stats.kmerlen) << std::endl;
+        this->getGenomeSubstr(eit.first,this->stats.kmerlen-2,sub_seq); // first get fasta sequence
+        start_seq = sub_seq.substr(0,this->stats.kmerlen); // get sequence for the potential start of the splice junction
+        std::transform(start_seq.begin(), start_seq.end(), start_seq.begin(), ::toupper);
+        end_seq = sub_seq.substr(sub_seq.length()-(this->stats.kmerlen),this->stats.kmerlen); // get sequence for the potential end of the splice junction
+        std::transform(end_seq.begin(), end_seq.end(), end_seq.begin(), ::toupper);
 
-        counter++;
+        std::map<int,std::string> starts,ends; // holds positions and other information from donor and acceptor sites
+
+        size_t pos = start_seq.find("GT", 0); // find canonical donor on the donor site
+        while(pos != std::string::npos){
+            starts.insert(std::make_pair(pos,start_seq.substr(pos,start_seq.length()-pos-2)));
+            pos = start_seq.find("GT",pos+1);
+        }
+
+        pos = end_seq.find("AG", 0); // find canonical acceptor on the acceptor site
+        while(pos != std::string::npos){
+            ends.insert(std::make_pair(pos,end_seq.substr(pos+2,end_seq.length()-pos)));
+            pos = end_seq.find("AG",pos+1);
+        }
+
+        for (const auto& start_it : starts){ // now figure out which one is the true junction
+            for (const auto& end_it : ends){
+                if (start_it.second == end_it.second.substr(0,start_it.second.length())){
+                    edges_fp << this->hdb->getContigFromID(eit.second.getChr()) << "\t" << "hairpin" << "\t" << "intron" << "\t"
+                             << eit.second.getStart()-(this->stats.kmerlen-start_it.first)+2 << "\t" << eit.second.getEnd()+end_it.first+start_it.second.length() << "\t"
+                             << "." << "\t" << eit.second.getStrand() << "\t" << "." << "\t" <<  "weight="<<eit.second.getWeight()
+                             << ";start="<< start_seq <<";end=" << end_seq << std::endl;
+
+                    counter++;
+                }
+            }
+        }
     }
-
     edges_fp.close();
 }
 
