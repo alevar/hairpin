@@ -223,7 +223,7 @@ void HGraph::write_intron_gff() {
 //        5. Vertices at each end of the junction shall have identical weights corresponding to the evaluated edge
 //        6. Number of distinct start positions of reads that cover a splice junction can also be taken into account when computing the likelihood score
 //        7. We can also create a threshold for the number of unique start sites preceding a splice junction
-//        8. If two contradictory junctions exist with otherwise identical scores - the shorter one shall be prefered
+//        8. If two contradictory junctions exist with otherwise identical scores - the shorter one shall be preferred
 //
 //
 //TODO: Important
@@ -247,11 +247,82 @@ void HGraph::write_intron_gff() {
 //TODO: Splice junctions [1]:
 //        GT-AG - canonical
 //        GC-AG - semi-canonical
-//        AT-AC - semi-canonical
+//        AT-CA - non-canonical
 //
 //
 //TODO: The parser has to make sure that the total number of bases contained in connected vertices is above a threshold
 //      this is important to ensure spurious/incomplete multimappers are not present in the final graph
+
+uint8_t HGraph::getEdgeChr(const std::pair<Edge,Aggregate_edge_props>& eit){
+    return eit.second.getChr();
+}
+
+uint8_t HGraph::getEdgeStrand(const std::pair<HGraph::Edge, Aggregate_edge_props> &eit) {
+    return eit.second.getStrand();
+}
+
+uint8_t HGraph::getEdgeStart(const std::pair<HGraph::Edge, Aggregate_edge_props> &eit) {
+    return eit.second.getStart();
+}
+
+uint8_t HGraph::getEdgeEnd(const std::pair<HGraph::Edge, Aggregate_edge_props> &eit) {
+    return eit.second.getEnd();
+}
+
+// this function identifies all possible precise splice junctions given one potential splice junction (edge)
+// the evaluation is based entirely on the donor/acceptor pairs
+void HGraph::evaluate_sj(const std::pair<Edge,Aggregate_edge_props>& eit,const std::string& donor,const std::string& acceptor,SJS& sj_map){
+    std::string sub_seq, start_seq, end_seq;
+    this->getGenomeSubstr(eit.first,this->stats.kmerlen-2,sub_seq); // first get fasta sequence
+    start_seq = sub_seq.substr(0,this->stats.kmerlen); // get sequence for the potential start of the splice junction
+    std::transform(start_seq.begin(), start_seq.end(), start_seq.begin(), ::toupper);
+    end_seq = sub_seq.substr(sub_seq.length()-(this->stats.kmerlen),this->stats.kmerlen); // get sequence for the potential end of the splice junction
+    std::transform(end_seq.begin(), end_seq.end(), end_seq.begin(), ::toupper);
+
+    std::map<int,std::string> starts,ends; // holds positions and other information from donor and acceptor sites
+
+    size_t pos = start_seq.find(donor, 0); // find canonical donor on the donor site
+    while(pos != std::string::npos){
+        starts.insert(std::make_pair(pos,start_seq.substr(pos,start_seq.length()-pos-2)));
+        pos = start_seq.find(donor,pos+1);
+    }
+
+    pos = end_seq.find(acceptor, 0); // find canonical acceptor on the acceptor site
+    while(pos != std::string::npos){
+        ends.insert(std::make_pair(pos,end_seq.substr(pos+2,end_seq.length()-pos)));
+        pos = end_seq.find(acceptor,pos+1);
+    }
+
+    for (const auto& start_it : starts){ // now figure out which one is the true junction
+        for (const auto& end_it : ends){
+            if (start_it.first-end_it.first-1>=0) { // guarantees that such combination is even possible
+                if (start_it.second == end_it.second.substr(0, start_it.second.length()) && // this ensures that the overhang on the donor site is compliant with the overhang on the acceptor site
+                    end_seq.substr(0, end_it.first) == start_seq.substr(start_it.first - end_it.first - 1, end_it.first)) { // this ensures the reverse - that the overhang on the acceptor site is compliant with the overhang on the donor site
+                    sj_map.insert(std::make_pair(std::make_tuple(getEdgeChr(eit),
+                                                                 getEdgeStrand(eit),
+                                                                 eit.second.getStart() - (this->stats.kmerlen - start_it.first) + 2,
+                                                                 eit.second.getEnd() + end_it.first + start_it.second.length()),0));
+                }
+            }
+        }
+    }
+}
+
+// given all precise splice junctions this function enforces any constraints
+// currently supports only the minimum and the maximum intron lengths
+// but can be extended to deal with more if needed
+void HGraph::enforce_constraints(SJS& sm){
+    int length = 0;
+    for (auto sm_it = sm.cbegin(); sm_it != sm.cend();){
+        length = std::get<3>(sm_it->first) - std::get<2>(sm_it->first);
+        if (length < this->minIntron || length > this->maxIntron){
+            sm_it = sm.erase(sm_it);
+        }
+        else{
+            ++sm_it;
+        }
+    }
+}
 
 // parse graph and evaluate gaps and assign splice junctions and mismatches and gaps
 void HGraph::parse_graph() {
@@ -259,46 +330,18 @@ void HGraph::parse_graph() {
     edges_fname.append(".intron.parsed.gff");
     std::ofstream edges_fp(edges_fname.c_str());
 
-    std::string sub_seq, start_seq, end_seq;
-
     int counter=0;
 
-    for(auto eit : this->emap){
-        this->getGenomeSubstr(eit.first,this->stats.kmerlen-2,sub_seq); // first get fasta sequence
-        start_seq = sub_seq.substr(0,this->stats.kmerlen); // get sequence for the potential start of the splice junction
-        std::transform(start_seq.begin(), start_seq.end(), start_seq.begin(), ::toupper);
-        end_seq = sub_seq.substr(sub_seq.length()-(this->stats.kmerlen),this->stats.kmerlen); // get sequence for the potential end of the splice junction
-        std::transform(end_seq.begin(), end_seq.end(), end_seq.begin(), ::toupper);
+    for(const auto& eit : this->emap){
+        SJS sjs_map;
+        evaluate_sj(eit,"GT","AG",sjs_map);
+        enforce_constraints(sjs_map);
+        for(auto eit2 : sjs_map) {
+            edges_fp << this->hdb->getContigFromID(eit.second.getChr()) << "\t" << "hairpin" << "\t" << "intron" << "\t"
+                     << std::get<2>(eit2.first) << "\t" << std::get<3>(eit2.first) << "\t"
+                     << "." << "\t" << eit.second.getStrand() << "\t" << "." << "\t" << "weight=" << eit.second.getWeight() << std::endl;
 
-        std::map<int,std::string> starts,ends; // holds positions and other information from donor and acceptor sites
-
-        size_t pos = start_seq.find("GT", 0); // find canonical donor on the donor site
-        while(pos != std::string::npos){
-            starts.insert(std::make_pair(pos,start_seq.substr(pos,start_seq.length()-pos-2)));
-            pos = start_seq.find("GT",pos+1);
-        }
-
-        pos = end_seq.find("AG", 0); // find canonical acceptor on the acceptor site
-        while(pos != std::string::npos){
-            ends.insert(std::make_pair(pos,end_seq.substr(pos+2,end_seq.length()-pos)));
-            pos = end_seq.find("AG",pos+1);
-        }
-
-        for (const auto& start_it : starts){ // now figure out which one is the true junction
-            for (const auto& end_it : ends){
-                if (start_it.first-end_it.first-1>=0) { // guarantees that such combination is even possible
-                    if (start_it.second == end_it.second.substr(0, start_it.second.length()) && // this ensures that the overhang on the donor site is compliant with the overhang on the acceptor site
-                        (end_seq.substr(0, end_it.first) == start_seq.substr(start_it.first - end_it.first - 1, end_it.first))) { // this ensures the reverse - that the overhang on the acceptor site is compliant with the overhang on the donor site
-                        edges_fp << this->hdb->getContigFromID(eit.second.getChr()) << "\t" << "hairpin" << "\t" << "intron" << "\t"
-                                 << eit.second.getStart() - (this->stats.kmerlen - start_it.first) + 2 << "\t"
-                                 << eit.second.getEnd() + end_it.first + start_it.second.length() << "\t"
-                                 << "." << "\t" << eit.second.getStrand() << "\t" << "." << "\t" << "weight=" << eit.second.getWeight()
-                                 << ";start=" << start_seq << ";end=" << end_seq << std::endl;
-
-                        counter++;
-                    }
-                }
-            }
+            counter++;
         }
     }
     edges_fp.close();

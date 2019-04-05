@@ -201,7 +201,7 @@ public:
     void validate(){
         this->valid=true;
     } // for an unknown edge - modify the edge and the vertices to the inferred ones; refine coordinates and set the validation flag
-    int getWeight(){
+    int getWeight() const {
         int total=0;
         for(auto vt : this->nexts){ // there is a problem here - we can not go to the exact edge in the vertex which is needed to compute the weight of a given edge
             int wt = vt->second.getInEdgeWeight(prevs[0]->first.getStart());
@@ -213,10 +213,10 @@ public:
         }
         return total;
     }
-    uint32_t getStart(){return prevs[0]->first.getEnd();}
-    uint32_t getEnd(){return nexts[0]->first.getStart();}
-    uint8_t getChr(){return prevs[0]->first.getChr();}
-    uint8_t getStrand(){return prevs[0]->first.getStrand();}
+    uint32_t getStart() const {return prevs[0]->first.getEnd();}
+    uint32_t getEnd() const {return nexts[0]->first.getStart();}
+    uint8_t getChr() const {return prevs[0]->first.getChr();}
+    uint8_t getStrand() const {return prevs[0]->first.getStrand();}
 
     void addNext(std::map<VCoords,Vertex>::iterator vt){this->nexts.emplace_back(vt);}
     void addPrev(std::map<VCoords,Vertex>::iterator vt){this->prevs.emplace_back(vt);}
@@ -264,8 +264,8 @@ private:
         }
     };
 
-    std::map<Edge,Aggregate_edge_props,edge_cmp> emap;
-    std::pair<std::map<Edge,Aggregate_edge_props,edge_cmp>::iterator,bool> emap_it;
+    std::map<Edge,Aggregate_edge_props,edge_cmp> emap,final_emap;
+    std::pair<std::map<Edge,Aggregate_edge_props,edge_cmp>::iterator,bool> emap_it,final_emap_it;
 
     HDB* hdb;
     std::string out_fname="";
@@ -285,8 +285,8 @@ private:
     MinMap::iterator trans_it;
     HDB::GenMap::iterator genom_it;
 
-    VMap vertices;
-    std::pair<std::map<VCoords,Vertex>::iterator,bool> vertex_it;
+    VMap vertices,final_vertices;
+    std::pair<std::map<VCoords,Vertex>::iterator,bool> vertex_it,final_vertex_it;
 
     int getGenomeSubstr(Edge et,int overhang, std::string& sub_seq);
     int getGenomeSubstr(uint8_t chrID,int8_t strand, uint32_t start, uint8_t length, std::string& sub_seq);
@@ -312,8 +312,23 @@ private:
     };
     std::map<std::string,float> acceptors = {
             {"AG",1.0},
-            {"AC",0.5},
+            {"CA",0.5},
     };
+
+    typedef std::tuple<uint8_t,uint8_t,uint32_t,uint32_t> SJ; // defines the type of a splice junction
+    struct sjs_cmp { // Comparator for the SJS map
+        bool operator()(const SJ& prev, const SJ& next) const {
+            return std::get<0>(prev) < std::get<0>(next) || std::get<1>(prev) < std::get<1>(next) ||
+                   std::get<2>(prev) < std::get<2>(next) || std::get<3>(prev) < std::get<3>(next);
+        }
+    };
+    typedef std::map<SJ,int,sjs_cmp> SJS; // defines a type for a map of splice junctions
+    void evaluate_sj(const std::pair<Edge,Aggregate_edge_props>& eit,const std::string& acceptor,const std::string& donor,SJS& sjs);
+    void enforce_constraints(SJS& sm);
+    uint8_t getEdgeChr(const std::pair<Edge,Aggregate_edge_props>& eit);
+    uint8_t getEdgeStrand(const std::pair<Edge,Aggregate_edge_props>& eit);
+    uint8_t getEdgeStart(const std::pair<Edge,Aggregate_edge_props>& eit);
+    uint8_t getEdgeEnd(const std::pair<Edge,Aggregate_edge_props>& eit);
 
 };
 
