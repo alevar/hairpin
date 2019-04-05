@@ -305,12 +305,12 @@ private:
 
     std::string generate_sam_header(std::ofstream& sam_fp);
 
-    std::map<std::string,float> donors = {
+    std::map<std::string,double> donors = {
             {"GT",1.0},
             {"GC",0.5},
             {"AT",0.5},
     };
-    std::map<std::string,float> acceptors = {
+    std::map<std::string,double> acceptors = {
             {"AG",1.0},
             {"CA",0.5},
     };
@@ -322,9 +322,10 @@ private:
                    std::get<2>(prev) < std::get<2>(next) || std::get<3>(prev) < std::get<3>(next);
         }
     };
-    typedef std::map<SJ,int,sjs_cmp> SJS; // defines a type for a map of splice junctions
-    void evaluate_sj(const std::pair<Edge,Aggregate_edge_props>& eit,const std::string& acceptor,const std::string& donor,SJS& sjs);
+    typedef std::map<SJ,std::tuple<int,int>,sjs_cmp> SJS; // defines a type for a map of splice junctions
+    void evaluate_sj(const std::pair<Edge,Aggregate_edge_props>& eit,const std::pair<std::string,double>& donor,const std::pair<std::string,double>& acceptor,SJS& sjs);
     void enforce_constraints(SJS& sm);
+    void evaluate_donor_acceptor(const std::pair<Edge,Aggregate_edge_props>& eit, SJS& sm);
     uint8_t getEdgeChr(const std::pair<Edge,Aggregate_edge_props>& eit);
     uint8_t getEdgeStrand(const std::pair<Edge,Aggregate_edge_props>& eit);
     uint8_t getEdgeStart(const std::pair<Edge,Aggregate_edge_props>& eit);

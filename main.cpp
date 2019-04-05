@@ -30,7 +30,10 @@ int hairpin_quant(int argc,char* argv[]){
         MAX   = 'm',
         MIN   = 'i',
         MM    = 'l',
-        SAM   = 's'};
+        SAM   = 's',
+        CANONICAL = 'c',
+        SEMICANONICAL = 's',
+        NONCANONICAL = 'n'};
 
     ArgParse args_quant("hairpin_align");
     args_quant.add_string(Opt_Quant::HDB_FP,"hdb","","path to the database directory");
@@ -44,6 +47,9 @@ int hairpin_quant(int argc,char* argv[]){
     args_quant.add_int(Opt_Quant::MM,"min_mismatch",0,"minimum number of mismatches permitted for a read");
     args_quant.add_int(Opt_Quant::MM,"max_mismatch",0,"maximum number of mismatches permitted for a read");
     args_quant.add_flag(Opt_Quant::SAM,"sam","should an alignment be generated from the graph"); // pass all the other graph options
+    args_quant.add_double(Opt_Quant::CANONICAL,"can",1.0,"0-1 weight of canonical donor and acceptor bases");
+    args_quant.add_double(Opt_Quant::SEMICANONICAL,"semi",0.5,"0-1 weight of semi-canonical donor and acceptor bases");
+    args_quant.add_double(Opt_Quant::NONCANONICAL,"non",0.25,"0-1 weight of noncanonical donor and acceptor basees");
 
     args_quant.parse_args(argc,argv);
 

@@ -252,6 +252,14 @@ void HGraph::write_intron_gff() {
 //
 //TODO: The parser has to make sure that the total number of bases contained in connected vertices is above a threshold
 //      this is important to ensure spurious/incomplete multimappers are not present in the final graph
+//
+//
+//TODO: All the criteria in the ruleset must be normalized to a 0-1 scale
+//   for instance the weight of canonical vs semi vs noncanonical splice sites is already enforced to be in the correct range
+//   length of the junction can also be waited, where if many potential precise splice junctions exist - the shortest one (above the minimum
+//      intron length threshold is given the precedence by asigning the highest value and the rest are weighted with respect to this shortest length
+//   afterwards, when all the individual scores are computed, we can put them through a series of sigmoid function with cutoffs
+//      and then be able to chose the optimal alignment
 
 uint8_t HGraph::getEdgeChr(const std::pair<Edge,Aggregate_edge_props>& eit){
     return eit.second.getChr();
@@ -271,7 +279,7 @@ uint8_t HGraph::getEdgeEnd(const std::pair<HGraph::Edge, Aggregate_edge_props> &
 
 // this function identifies all possible precise splice junctions given one potential splice junction (edge)
 // the evaluation is based entirely on the donor/acceptor pairs
-void HGraph::evaluate_sj(const std::pair<Edge,Aggregate_edge_props>& eit,const std::string& donor,const std::string& acceptor,SJS& sj_map){
+void HGraph::evaluate_sj(const std::pair<Edge,Aggregate_edge_props>& eit,const std::pair<std::string,double>& donor,const std::pair<std::string,double>& acceptor, SJS& sj_map){
     std::string sub_seq, start_seq, end_seq;
     this->getGenomeSubstr(eit.first,this->stats.kmerlen-2,sub_seq); // first get fasta sequence
     start_seq = sub_seq.substr(0,this->stats.kmerlen); // get sequence for the potential start of the splice junction
@@ -281,16 +289,16 @@ void HGraph::evaluate_sj(const std::pair<Edge,Aggregate_edge_props>& eit,const s
 
     std::map<int,std::string> starts,ends; // holds positions and other information from donor and acceptor sites
 
-    size_t pos = start_seq.find(donor, 0); // find canonical donor on the donor site
+    size_t pos = start_seq.find(donor.first, 0); // find canonical donor on the donor site
     while(pos != std::string::npos){
         starts.insert(std::make_pair(pos,start_seq.substr(pos,start_seq.length()-pos-2)));
-        pos = start_seq.find(donor,pos+1);
+        pos = start_seq.find(donor.first,pos+1);
     }
 
-    pos = end_seq.find(acceptor, 0); // find canonical acceptor on the acceptor site
+    pos = end_seq.find(acceptor.first, 0); // find canonical acceptor on the acceptor site
     while(pos != std::string::npos){
         ends.insert(std::make_pair(pos,end_seq.substr(pos+2,end_seq.length()-pos)));
-        pos = end_seq.find(acceptor,pos+1);
+        pos = end_seq.find(acceptor.first,pos+1);
     }
 
     for (const auto& start_it : starts){ // now figure out which one is the true junction
@@ -301,14 +309,24 @@ void HGraph::evaluate_sj(const std::pair<Edge,Aggregate_edge_props>& eit,const s
                     sj_map.insert(std::make_pair(std::make_tuple(getEdgeChr(eit),
                                                                  getEdgeStrand(eit),
                                                                  eit.second.getStart() - (this->stats.kmerlen - start_it.first) + 2,
-                                                                 eit.second.getEnd() + end_it.first + start_it.second.length()),0));
+                                                                 eit.second.getEnd() + end_it.first + start_it.second.length()),
+                                                 std::make_tuple(donor.second,acceptor.second)));
                 }
             }
         }
     }
 }
 
-// given all precise splice junctions this function enforces any constraints
+// this function runs splice junction verification for all donor/acceptor pairs
+void HGraph::evaluate_donor_acceptor(const std::pair<Edge,Aggregate_edge_props>& eit, SJS& sm){
+    for (auto dit : this->donors) { // iterate over all the donors
+        for (auto ait : this->acceptors) { // iterate over all acceptors
+            evaluate_sj(eit,dit,ait,sm);
+        }
+    }
+}
+
+// given all precise splice junctions this function enforces any specified constraints
 // currently supports only the minimum and the maximum intron lengths
 // but can be extended to deal with more if needed
 void HGraph::enforce_constraints(SJS& sm){
@@ -334,7 +352,7 @@ void HGraph::parse_graph() {
 
     for(const auto& eit : this->emap){
         SJS sjs_map;
-        evaluate_sj(eit,"GT","AG",sjs_map);
+        evaluate_donor_acceptor(eit,sjs_map);
         enforce_constraints(sjs_map);
         for(auto eit2 : sjs_map) {
             edges_fp << this->hdb->getContigFromID(eit.second.getChr()) << "\t" << "hairpin" << "\t" << "intron" << "\t"
