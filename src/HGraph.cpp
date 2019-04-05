@@ -286,13 +286,17 @@ void HGraph::parse_graph() {
 
         for (const auto& start_it : starts){ // now figure out which one is the true junction
             for (const auto& end_it : ends){
-                if (start_it.second == end_it.second.substr(0,start_it.second.length())){
-                    edges_fp << this->hdb->getContigFromID(eit.second.getChr()) << "\t" << "hairpin" << "\t" << "intron" << "\t"
-                             << eit.second.getStart()-(this->stats.kmerlen-start_it.first)+2 << "\t" << eit.second.getEnd()+end_it.first+start_it.second.length() << "\t"
-                             << "." << "\t" << eit.second.getStrand() << "\t" << "." << "\t" <<  "weight="<<eit.second.getWeight()
-                             << ";start="<< start_seq <<";end=" << end_seq << std::endl;
+                if (start_it.first-end_it.first-1>=0) { // guarantees that such combination is even possible
+                    if (start_it.second == end_it.second.substr(0, start_it.second.length()) && // this ensures that the overhang on the donor site is compliant with the overhang on the acceptor site
+                        (end_seq.substr(0, end_it.first) == start_seq.substr(start_it.first - end_it.first - 1, end_it.first))) { // this ensures the reverse - that the overhang on the acceptor site is compliant with the overhang on the donor site
+                        edges_fp << this->hdb->getContigFromID(eit.second.getChr()) << "\t" << "hairpin" << "\t" << "intron" << "\t"
+                                 << eit.second.getStart() - (this->stats.kmerlen - start_it.first) + 2 << "\t"
+                                 << eit.second.getEnd() + end_it.first + start_it.second.length() << "\t"
+                                 << "." << "\t" << eit.second.getStrand() << "\t" << "." << "\t" << "weight=" << eit.second.getWeight()
+                                 << ";start=" << start_seq << ";end=" << end_seq << std::endl;
 
-                    counter++;
+                        counter++;
+                    }
                 }
             }
         }
