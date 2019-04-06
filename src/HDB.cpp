@@ -555,3 +555,9 @@ MinMap::iterator HDB::find_trans(std::string &kmer) {
 HDB::GenMap::iterator HDB::find_genom(std::string& kmer){
     return this->genom_map.find(kmer);
 }
+
+void HDB::generate_sq(std::ofstream &fp) {
+    for (const auto& contig_it : this->id_to_contig){
+        fp << "@SQ\tSN:" << contig_it.second.first << "\tLN:" << contig_it.second.second <<std::endl;
+    }
+}

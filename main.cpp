@@ -32,7 +32,7 @@ int hairpin_quant(int argc,char* argv[]){
         MM    = 'l',
         SAM   = 's',
         CANONICAL = 'c',
-        SEMICANONICAL = 's',
+        SEMICANONICAL = 'e',
         NONCANONICAL = 'n'};
 
     ArgParse args_quant("hairpin_align");
@@ -64,7 +64,18 @@ int hairpin_quant(int argc,char* argv[]){
     hg.parse_graph();
     hg.write_intron_gff();
     if (args_quant.get_flag(Opt_Quant::SAM)) {
-        hg.to_sam();
+        // first create the execution string
+        std::string cl="hairpin ";
+        for (int i=0;i<argc;i++){
+            if(i==0){
+                cl+=argv[i];
+            }
+            else{
+                cl+=" ";
+                cl+=argv[i];
+            }
+        }
+        hg.to_sam(cl);
     }
     hg.print_stats();
 

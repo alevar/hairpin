@@ -76,6 +76,8 @@ public:
     std::string getContigFromID(uint8_t id){return id_to_contig[id].first;}
     uint8_t getIDFromContig(std::string id){return contig_to_id[id];}
 
+    void generate_sq(std::ofstream& fp);
+
 private:
     bool transcriptomeBuild=true; // whether a transcriptome index is requested
     GffReader gtfReader_;

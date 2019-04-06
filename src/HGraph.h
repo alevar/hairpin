@@ -244,7 +244,7 @@ public:
 
     void add_edge(std::map<VCoords,Vertex>::iterator vit1,std::map<VCoords,Vertex>::iterator vit2);
 
-    void to_sam();
+    void to_sam(std::string& cl);
     void sort_graph();
     void parse_graph();
     void write_intron_gff();
@@ -303,7 +303,7 @@ private:
 
     typedef std::pair<uint8_t,uint8_t> PosPair; // first -> length of the associated Coords Vector; second - position of the kmer within the current read
 
-    std::string generate_sam_header(std::ofstream& sam_fp);
+    void generate_sam_header(std::ofstream& sam_fp,std::string& cl);
 
     std::map<std::string,double> donors = {
             {"GT",1.0},
@@ -313,6 +313,7 @@ private:
     std::map<std::string,double> acceptors = {
             {"AG",1.0},
             {"CA",0.5},
+            {"AC",0.5}
     };
 
     typedef std::tuple<uint8_t,uint8_t,uint32_t,uint32_t> SJ; // defines the type of a splice junction

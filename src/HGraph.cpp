@@ -129,6 +129,10 @@ void HGraph::add_read(std::string &read) {
                         else{
                             cur_vertex_it = this->add_vertex(std::get<0>(cv.second.first), std::get<1>(cv.second.first), std::get<2>(cv.second.first),(uint8_t)cv.second.second.first);
                             extends_final.insert(std::make_pair(cur_vertex_it,cv.second.second.second));
+//                            if(cur_vertex_it->first.getEnd()==1412){ // check read at a given SJ
+//                                std::cout<<"YAY"<<std::endl;
+//                                std::cout<<read<<std::endl;
+//                            }
                             extends.insert(cv.first);
                         }
                     }
@@ -207,7 +211,7 @@ void HGraph::write_intron_gff() {
         edges_fp << this->hdb->getContigFromID(eit.second.getChr()) << "\t" << "hairpin" << "\t" << "intron" << "\t"
                  << eit.second.getStart() << "\t" << eit.second.getEnd() << "\t"
                  << "." << "\t" << eit.second.getStrand() << "\t" << "." << "\t" <<  "weight="<<eit.second.getWeight()
-                 <<";start="<< sub_seq.substr(0,this->stats.kmerlen) <<";end=" << sub_seq.substr(sub_seq.length()-(this->stats.kmerlen),this->stats.kmerlen) << ";full=" << sub_seq << std::endl;
+                 <<";start="<< sub_seq.substr(0,this->stats.kmerlen) <<";end=" << sub_seq.substr(sub_seq.length()-(this->stats.kmerlen),this->stats.kmerlen) << std::endl;
 
         counter++;
     }
@@ -244,7 +248,7 @@ void HGraph::write_intron_gff() {
 //  Whenever the parser decides that the splice junction is valid it should use this function to set the known flag to true
 //
 //
-//TODO: Splice junctions [1]:
+//TODO: Splice junctions:
 //        GT-AG - canonical
 //        GC-AG - semi-canonical
 //        AT-CA - non-canonical
@@ -286,6 +290,9 @@ void HGraph::evaluate_sj(const std::pair<Edge,Aggregate_edge_props>& eit,const s
     std::transform(start_seq.begin(), start_seq.end(), start_seq.begin(), ::toupper);
     end_seq = sub_seq.substr(sub_seq.length()-(this->stats.kmerlen),this->stats.kmerlen); // get sequence for the potential end of the splice junction
     std::transform(end_seq.begin(), end_seq.end(), end_seq.begin(), ::toupper);
+
+    std::cout<<start_seq<<std::endl;
+    std::cout<<end_seq<<std::endl;
 
     std::map<int,std::string> starts,ends; // holds positions and other information from donor and acceptor sites
 
@@ -365,17 +372,19 @@ void HGraph::parse_graph() {
     edges_fp.close();
 }
 
-std::string HGraph::generate_sam_header(std::ofstream& sam_fp){ // generate the header from the database information
-    sam_fp<<"header"<<std::endl;
+void HGraph::generate_sam_header(std::ofstream& sam_fp,std::string& cl){ // generate the header from the database information
+    sam_fp << "@HD\tVN:1.0\tSO:unsorted"<<std::endl;
+    this->hdb->generate_sq(sam_fp);
+    sam_fp << "@PG\tID:hairpin\tPN:hairpin\tVN:1.0\tCL:\"" << cl << "\"" << std::endl;
 }
 
 // this function takes the parsed graph and output the SAM-formatted file for further analysis
-void HGraph::to_sam() {
+void HGraph::to_sam(std::string& cl) {
     std::string sam_fname(this->out_fname);
     sam_fname.append(".sam");
     std::ofstream sam_fp(sam_fname.c_str());
 
-    this->generate_sam_header(sam_fp);
+    this->generate_sam_header(sam_fp,cl);
 
     sam_fp<<"body"<<std::endl;
 
