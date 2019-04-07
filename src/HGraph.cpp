@@ -60,6 +60,9 @@ void HGraph::add_read(std::string &read) {
         this->genom_it=this->hdb->find_genom(kmer);
         if(this->genom_it!=this->hdb->genom_end()){ // match to genome found
             this->stats.numKmerMatchedGenom++;
+
+//            std::cout<<kmer<<std::endl;
+
             if(!extends.empty()){ // need to evaluate the predecessors, if a match did not occur near one of the positions
 
                 std::vector<std::pair<CoordVec,PosPair> > case_one; // coordinates for which a distance of 1 was observed
@@ -125,14 +128,20 @@ void HGraph::add_read(std::string &read) {
 //                            extends[case_one_it->first].second++; // update the position of the last kmer in the extend
                             extends.insert(cv.first); // add the new value to the extends
                             case_one.erase(case_one_it); // remove the entry from the case_one
+
+//                            std::cout<<"\t1: "<<kmer<<std::endl;
+
                         }
                         else{
                             cur_vertex_it = this->add_vertex(std::get<0>(cv.second.first), std::get<1>(cv.second.first), std::get<2>(cv.second.first),(uint8_t)cv.second.second.first);
                             extends_final.insert(std::make_pair(cur_vertex_it,cv.second.second.second));
-//                            if(cur_vertex_it->first.getEnd()==1412){ // check read at a given SJ
-//                                std::cout<<"YAY"<<std::endl;
+
+//                            std::cout<<"\t2: "<<kmer<<std::endl;
+
+//                            if (cur_vertex_it->first.getEnd() == 3853){
 //                                std::cout<<read<<std::endl;
 //                            }
+
                             extends.insert(cv.first);
                         }
                     }
@@ -151,6 +160,7 @@ void HGraph::add_read(std::string &read) {
         }
         else{
             this->stats.numKmerUnmatched++;
+//            std::cout<<"  "<<kmer<<std::endl;
         }
     }
     // the read has been evaluated
@@ -205,7 +215,7 @@ void HGraph::write_intron_gff() {
 
     int counter=0;
     std::string sub_seq;
-    for(auto eit : this->emap){
+    for(const auto& eit : this->emap){
         // first get fasta sequence
         this->getGenomeSubstr(eit.first,this->stats.kmerlen-2,sub_seq);
         edges_fp << this->hdb->getContigFromID(eit.second.getChr()) << "\t" << "hairpin" << "\t" << "intron" << "\t"
@@ -291,8 +301,8 @@ void HGraph::evaluate_sj(const std::pair<Edge,Aggregate_edge_props>& eit,const s
     end_seq = sub_seq.substr(sub_seq.length()-(this->stats.kmerlen),this->stats.kmerlen); // get sequence for the potential end of the splice junction
     std::transform(end_seq.begin(), end_seq.end(), end_seq.begin(), ::toupper);
 
-    std::cout<<start_seq<<std::endl;
-    std::cout<<end_seq<<std::endl;
+//    std::cout<<start_seq<<std::endl;
+//    std::cout<<end_seq<<std::endl;
 
     std::map<int,std::string> starts,ends; // holds positions and other information from donor and acceptor sites
 
@@ -310,13 +320,24 @@ void HGraph::evaluate_sj(const std::pair<Edge,Aggregate_edge_props>& eit,const s
 
     for (const auto& start_it : starts){ // now figure out which one is the true junction
         for (const auto& end_it : ends){
-            if (start_it.first-end_it.first-1>=0) { // guarantees that such combination is even possible
-                if (start_it.second == end_it.second.substr(0, start_it.second.length()) && // this ensures that the overhang on the donor site is compliant with the overhang on the acceptor site
-                    end_seq.substr(0, end_it.first) == start_seq.substr(start_it.first - end_it.first - 1, end_it.first)) { // this ensures the reverse - that the overhang on the acceptor site is compliant with the overhang on the donor site
+
+            int numBases_after_donor=(start_seq.length()-2)-start_it.first;
+            int numBases_before_acceptor=end_it.first;
+
+            if (start_it.first - numBases_before_acceptor >= 0 &&
+                start_it.first + numBases_before_acceptor <= this->stats.kmerlen){ // possible now compare the actual strings
+
+                std::string donor_overhang=start_seq.substr(start_it.first,numBases_after_donor);
+                std::string acceptor_overhang=end_seq.substr((end_it.first+2)-numBases_before_acceptor,numBases_before_acceptor);
+
+                std::string donor_overhang_on_acceptor=end_seq.substr(end_it.first+2,numBases_after_donor);
+                std::string acceptor_overhang_on_donor=start_seq.substr(start_it.first-numBases_before_acceptor,numBases_before_acceptor);
+
+                if (donor_overhang_on_acceptor == donor_overhang && acceptor_overhang_on_donor == acceptor_overhang){
                     sj_map.insert(std::make_pair(std::make_tuple(getEdgeChr(eit),
                                                                  getEdgeStrand(eit),
-                                                                 eit.second.getStart() - (this->stats.kmerlen - start_it.first) + 2,
-                                                                 eit.second.getEnd() + end_it.first + start_it.second.length()),
+                                                                 eit.second.getStart() - numBases_after_donor,
+                                                                 eit.second.getEnd()+1 + numBases_before_acceptor),
                                                  std::make_tuple(donor.second,acceptor.second)));
                 }
             }
