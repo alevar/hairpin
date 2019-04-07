@@ -138,7 +138,7 @@ void HGraph::add_read(std::string &read) {
 
 //                            std::cout<<"\t2: "<<kmer<<std::endl;
 
-//                            if (cur_vertex_it->first.getEnd() == 3853){
+//                            if (cur_vertex_it->first.getEnd() == 70567){
 //                                std::cout<<read<<std::endl;
 //                            }
 
@@ -181,7 +181,7 @@ void HGraph::add_read(std::string &read) {
             int kmerDist = (ci2->second - (ci1->second + (ci1->first->first.getLength()-this->stats.kmerlen)) ); // number of kmers separating the two vertices in the given read
 
             if (dist > 0 && dist <= this->maxIntron && // is not backward and is not greater than the maximum intron length; no minum threshold to permit edges to form for errors
-                    kmerDist <= this->stats.kmerlen && kmerDist >= this->stats.kmerlen/2){ // follows the expected number of missed kmers
+                    kmerDist <= this->stats.kmerlen && kmerDist >= this->stats.kmerlen/2){ // follows the expected number of missed kmers; the division by two here is due to the fact that an overhang can not be in the second half, since otherwise there would not be enough space on the receiving end
                 this->add_edge(ci1->first,ci2->first); // form an edge
             }
         }
@@ -325,7 +325,7 @@ void HGraph::evaluate_sj(const std::pair<Edge,Aggregate_edge_props>& eit,const s
             int numBases_before_acceptor=end_it.first;
 
             if (start_it.first - numBases_before_acceptor >= 0 &&
-                start_it.first + numBases_before_acceptor <= this->stats.kmerlen){ // possible now compare the actual strings
+                end_it.first + numBases_before_acceptor <= this->stats.kmerlen){ // possible now compare the actual strings
 
                 std::string donor_overhang=start_seq.substr(start_it.first,numBases_after_donor);
                 std::string acceptor_overhang=end_seq.substr((end_it.first+2)-numBases_before_acceptor,numBases_before_acceptor);
