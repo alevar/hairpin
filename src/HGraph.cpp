@@ -181,7 +181,7 @@ void HGraph::add_read(std::string &read) {
             int kmerDist = (ci2->second - (ci1->second + (ci1->first->first.getLength()-this->stats.kmerlen)) ); // number of kmers separating the two vertices in the given read
 
             if (dist > 0 && dist <= this->maxIntron && // is not backward and is not greater than the maximum intron length; no minum threshold to permit edges to form for errors
-                    kmerDist <= this->stats.kmerlen && kmerDist >= this->minMismatch){ // follows the expected number of missed kmers
+                    kmerDist <= this->stats.kmerlen && kmerDist >= this->stats.kmerlen/2){ // follows the expected number of missed kmers
                 this->add_edge(ci1->first,ci2->first); // form an edge
             }
         }

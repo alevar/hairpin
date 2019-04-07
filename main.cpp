@@ -29,7 +29,8 @@ int hairpin_quant(int argc,char* argv[]){
         REF   = 'r',
         MAX   = 'm',
         MIN   = 'i',
-        MM    = 'l',
+        MIN_MM= 'l',
+        MAX_MM= 'j',
         SAM   = 's',
         CANONICAL = 'c',
         SEMICANONICAL = 'e',
@@ -44,8 +45,8 @@ int hairpin_quant(int argc,char* argv[]){
     args_quant.add_string(Opt_Quant::REF,"reference","","reference genome sequence");
     args_quant.add_int(Opt_Quant::MAX,"max_intron",30000,"maximum allowed intron length");
     args_quant.add_int(Opt_Quant::MIN,"min_intron",20,"minimum allowed intron length");
-    args_quant.add_int(Opt_Quant::MM,"min_mismatch",0,"minimum number of mismatches permitted for a read");
-    args_quant.add_int(Opt_Quant::MM,"max_mismatch",0,"maximum number of mismatches permitted for a read");
+    args_quant.add_int(Opt_Quant::MIN_MM,"min_mismatch",0,"minimum number of mismatches permitted for a read");
+    args_quant.add_int(Opt_Quant::MAX_MM,"max_mismatch",0,"maximum number of mismatches permitted for a read");
     args_quant.add_flag(Opt_Quant::SAM,"sam","should an alignment be generated from the graph"); // pass all the other graph options
     args_quant.add_double(Opt_Quant::CANONICAL,"can",1.0,"0-1 weight of canonical donor and acceptor bases");
     args_quant.add_double(Opt_Quant::SEMICANONICAL,"semi",0.5,"0-1 weight of semi-canonical donor and acceptor bases");
@@ -57,7 +58,7 @@ int hairpin_quant(int argc,char* argv[]){
     std::cerr<<"Loading the database"<<std::endl;
     hdb.load_db(args_quant.get_string(Opt_Quant::HDB_FP));
 
-    HGraph hg(&hdb,args_quant.get_int(Opt_Quant::MAX),args_quant.get_int(Opt_Quant::MIN),args_quant.get_int(Opt_Quant::MM),args_quant.get_string(Opt_Quant::OUTPUT));
+    HGraph hg(&hdb,args_quant.get_int(Opt_Quant::MAX),args_quant.get_int(Opt_Quant::MIN),args_quant.get_int(Opt_Quant::MIN_MM),args_quant.get_string(Opt_Quant::OUTPUT));
     std::cerr<<"processing reads"<<std::endl;
     process_reads_single(args_quant.get_string(Opt_Quant::UNPAIR),hg);
     std::cerr<<"parsing the graph"<<std::endl;
