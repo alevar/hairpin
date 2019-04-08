@@ -221,7 +221,7 @@ public:
     void addNext(std::map<VCoords,Vertex>::iterator vt){this->nexts.emplace_back(vt);}
     void addPrev(std::map<VCoords,Vertex>::iterator vt){this->prevs.emplace_back(vt);}
     std::vector<std::map<VCoords,Vertex>::iterator> getNexts(){return this->nexts;}
-    std::vector<std::map<VCoords,Vertex>::iterator> getPrevs(){return this->prevs;}
+    std::vector<std::map<VCoords,Vertex>::iterator> getPrevs() const {return this->prevs;}
 
 
 private:
@@ -272,6 +272,7 @@ private:
 
     int maxIntron=10;
     int minIntron=500000;
+    int minKmers=89; // TODO: minimum number of kmers that have to be matched from a single read - needs to be computed during runtime as a function of the read length
     struct Stats{
         int numReads=0;
         int numReadsIgnored=0;
@@ -326,6 +327,15 @@ private:
     typedef std::map<SJ,std::tuple<int,int>,sjs_cmp> SJS; // defines a type for a map of splice junctions
     void evaluate_sj(const std::pair<Edge,Aggregate_edge_props>& eit,const std::pair<std::string,double>& donor,const std::pair<std::string,double>& acceptor,SJS& sjs);
     void enforce_constraints(SJS& sm);
+    void enforce_read_length(const std::pair<Edge,Aggregate_edge_props>& eit, SJS& sm);
+
+    int compute_minimal_clique_length(SJS& sm);
+    int compute_maximal_clique_length(SJS& sm);
+    int compute_minimal_exon_length(SJS& sm);
+    int compute_maximal_exon_length(SJS& sm);
+    void get_num_starts(const std::pair<Edge,Aggregate_edge_props>& eit, std::vector<int>& starts);
+    void get_num_ends(const std::pair<Edge,Aggregate_edge_props>& eit, std::vector<int>& ends);
+
     void evaluate_donor_acceptor(const std::pair<Edge,Aggregate_edge_props>& eit, SJS& sm);
     uint8_t getEdgeChr(const std::pair<Edge,Aggregate_edge_props>& eit);
     uint8_t getEdgeStrand(const std::pair<Edge,Aggregate_edge_props>& eit);

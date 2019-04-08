@@ -238,6 +238,7 @@ void HGraph::write_intron_gff() {
 //        6. Number of distinct start positions of reads that cover a splice junction can also be taken into account when computing the likelihood score
 //        7. We can also create a threshold for the number of unique start sites preceding a splice junction
 //        8. If two contradictory junctions exist with otherwise identical scores - the shorter one shall be preferred
+//        9. the number of kmers that span a vertex-edge-vertex should be no less than readlength-(kmerlen*2)
 //
 //
 //TODO: Important
@@ -370,6 +371,65 @@ void HGraph::enforce_constraints(SJS& sm){
     }
 }
 
+// This function computes the number of bases in some exon. taking into account implicit edges (overlaps in vertex coordinates)
+// computes untill no vertex overlaps are found
+int HGraph::compute_maximal_exon_length(SJS& sm){
+    return 1;
+}
+
+// This function computes the number of bases in some exon, taking into account implicit edges (overlaps n vertex coordinates)
+// only comptes till the first validated edge
+int HGraph::compute_minimal_exon_length(SJS& sm){
+    return 1;
+}
+
+// This function computes the number of bases that belong to a given junction
+// this takes into account implicit edges - overlaps between vertices
+int HGraph::compute_maximal_clique_length(SJS& sm){
+    return 1;
+}
+
+// This function computes the total number of bases in the vertices directly connected to the given edge
+int HGraph::compute_minimal_clique_length(SJS& sm){
+    return 1;
+}
+
+// This function computes the number of distinct vertex start sites for a given edge
+void HGraph::get_num_starts(const std::pair<Edge,Aggregate_edge_props>& eit, std::vector<int>& starts){
+    for (auto vit : eit.second.getPrevs()){
+
+    }
+}
+
+// This function computes the number of distinct vertex end sites for a given edge
+void HGraph::get_num_ends(const std::pair<Edge,Aggregate_edge_props>& eit, std::vector<int>& ends){
+    for (auto vit : eit.second.getPrevs()){
+
+    }
+}
+
+// This function makes sure that the total number of bases in a given read
+void HGraph::enforce_read_length(const std::pair<Edge,Aggregate_edge_props>& eit, SJS& sm){
+    // first get the number of bases in the "raw" edge
+
+    // first get the minimal start over vertices preceeding the edge
+    for (auto vit : eit.second.getPrevs()){
+//        vit->second.
+    }
+
+    // then for each potential site - subtract the corrected length and see if it fits into the constraints
+//    int length = 0;
+//    for (auto sm_it = sm.cbegin(); sm_it != sm.cend();){
+//        length = std::get<3>(sm_it->first) - std::get<2>(sm_it->first);
+//        if (length < this->minIntron || length > this->maxIntron){
+//            sm_it = sm.erase(sm_it);
+//        }
+//        else{
+//            ++sm_it;
+//        }
+//    }
+}
+
 // parse graph and evaluate gaps and assign splice junctions and mismatches and gaps
 void HGraph::parse_graph() {
     std::string edges_fname(this->out_fname);
@@ -382,6 +442,8 @@ void HGraph::parse_graph() {
         SJS sjs_map;
         evaluate_donor_acceptor(eit,sjs_map);
         enforce_constraints(sjs_map);
+        enforce_read_length(eit,sjs_map);
+
         for(auto eit2 : sjs_map) {
             edges_fp << this->hdb->getContigFromID(eit.second.getChr()) << "\t" << "hairpin" << "\t" << "intron" << "\t"
                      << std::get<2>(eit2.first) << "\t" << std::get<3>(eit2.first) << "\t"
