@@ -220,7 +220,7 @@ public:
 
     void addNext(std::map<VCoords,Vertex>::iterator vt){this->nexts.emplace_back(vt);}
     void addPrev(std::map<VCoords,Vertex>::iterator vt){this->prevs.emplace_back(vt);}
-    std::vector<std::map<VCoords,Vertex>::iterator> getNexts(){return this->nexts;}
+    std::vector<std::map<VCoords,Vertex>::iterator> getNexts() const {return this->nexts;}
     std::vector<std::map<VCoords,Vertex>::iterator> getPrevs() const {return this->prevs;}
 
 
@@ -326,15 +326,21 @@ private:
     };
     typedef std::map<SJ,std::tuple<int,int>,sjs_cmp> SJS; // defines a type for a map of splice junctions
     void evaluate_sj(const std::pair<Edge,Aggregate_edge_props>& eit,const std::pair<std::string,double>& donor,const std::pair<std::string,double>& acceptor,SJS& sjs);
+
     void enforce_constraints(SJS& sm);
+
+    int _get_read_length_before(std::map<VCoords,Vertex>::iterator vit);
+    int _get_read_length_after(std::map<VCoords,Vertex>::iterator vit);
     void enforce_read_length(const std::pair<Edge,Aggregate_edge_props>& eit, SJS& sm);
+
+    void _get_starts(std::map<VCoords,Vertex>::iterator vit,std::vector<int>& starts);
+    void _get_ends(std::map<VCoords,Vertex>::iterator vit,std::vector<int>& ends);
+    void enforce_unique_start_end(const std::pair<Edge,Aggregate_edge_props>& eit, SJS& sm);
 
     int compute_minimal_clique_length(SJS& sm);
     int compute_maximal_clique_length(SJS& sm);
     int compute_minimal_exon_length(SJS& sm);
     int compute_maximal_exon_length(SJS& sm);
-    void get_num_starts(const std::pair<Edge,Aggregate_edge_props>& eit, std::vector<int>& starts);
-    void get_num_ends(const std::pair<Edge,Aggregate_edge_props>& eit, std::vector<int>& ends);
 
     void evaluate_donor_acceptor(const std::pair<Edge,Aggregate_edge_props>& eit, SJS& sm);
     uint8_t getEdgeChr(const std::pair<Edge,Aggregate_edge_props>& eit);

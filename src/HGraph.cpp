@@ -241,19 +241,6 @@ void HGraph::write_intron_gff() {
 //        9. the number of kmers that span a vertex-edge-vertex should be no less than readlength-(kmerlen*2)
 //
 //
-//TODO: Important
-//        Since kmers can extend into the intron, it makes it difficult to infer the true splice junction, since the number of possible donor-acceptor pairs increases proportionally to the length of the kmers used. However, what we can do is the following:
-//              We know that the bases by which the sequence is extended into the intron must be the same as the sequence of starting bases in the exon
-//        This information can be computed during the evaluation
-//        Algorithm
-//          1. Get potential donor
-//          2. Get sequence of all bases that belong to the donating vertex past the potential donor
-//          3. Get potential acceptor
-//          4. Get sequence of bases that belong to the accepting vertex past the potential acceptor site. The substring must begin right after the acceptor site and must contain the same number of bases as the one extracted from the donating vertex
-//          5. If the two sequences are not the same
-//              - Discard - can not be true
-//
-//
 //TODO: Output of the edge parser:
 //  The edge iterator is a pointer to a <key,value> pair from the edge map, where the value is of the type Aggregate_edge_props and contains a function validate();
 //  Whenever the parser decides that the splice junction is valid it should use this function to set the known flag to true
@@ -394,40 +381,139 @@ int HGraph::compute_minimal_clique_length(SJS& sm){
     return 1;
 }
 
-// This function computes the number of distinct vertex start sites for a given edge
-void HGraph::get_num_starts(const std::pair<Edge,Aggregate_edge_props>& eit, std::vector<int>& starts){
-    for (auto vit : eit.second.getPrevs()){
+// This is a recursive implementation which return the total number of bases in the vertices connected by edges to the current edge
+// no implicit edge evaluation is done here
+// previous vertices only
+int HGraph::_get_read_length_before(std::map<VCoords,Vertex>::iterator vit){
+    int cur_length = vit->first.getLength();
 
+    if (vit->second.getInDegree()>0){ // need to follow the exon structure for reads that span multiple introns
+        // TODO: this is a little problematic at the moment, since some of the "raw" edges might have already been removed
+        //      and as such need not be evaluated. Ideally, whenever an edge is refined - it has to be changed in the main graph
+        //      however, for the time being, we shall ignore this case and see how it works without taking that into account
+
+        // for each in edge - compute the length using recursion and return max
+        int max_length=0;
+        for (auto ep_it : vit->second.getInEdges()){ // for each incoming edge
+            int tmp_length = this->_get_read_length_before(ep_it.first);
+            if (tmp_length > max_length){max_length = tmp_length;}
+        }
+        cur_length=cur_length+max_length;
     }
+    return cur_length;
 }
 
-// This function computes the number of distinct vertex end sites for a given edge
-void HGraph::get_num_ends(const std::pair<Edge,Aggregate_edge_props>& eit, std::vector<int>& ends){
-    for (auto vit : eit.second.getPrevs()){
+// This is a recursive implementation which return the total number of bases in the vertices connected by edges to the current edge
+// no implicit edge evaluation is done here
+// next vertices only
+int HGraph::_get_read_length_after(std::map<VCoords,Vertex>::iterator vit){
+    int cur_length = vit->first.getLength(); // get length of the current vertex
 
+    if (vit->second.getOutDegree()>0){ // need to follow the exon structure for reads that span multiple introns
+        // TODO: this is a little problematic at the moment, since some of the "raw" edges might have already been removed
+        //      and as such need not be evaluated. Ideally, whenever an edge is refined - it has to be changed in the main graph
+        //      however, for the time being, we shall ignore this case and see how it works without taking that into account
+
+        // for each in edge - compute the length using recursion and return max
+        int max_length=0;
+        for (auto ep_it : vit->second.getOutEdges()){ // for each incoming edge
+            int tmp_length = this->_get_read_length_after(ep_it.first);
+            if (tmp_length > max_length){max_length = tmp_length;}
+        }
+        cur_length=cur_length+max_length;
     }
+    return cur_length;
 }
 
 // This function makes sure that the total number of bases in a given read
 void HGraph::enforce_read_length(const std::pair<Edge,Aggregate_edge_props>& eit, SJS& sm){
     // first get the number of bases in the "raw" edge
 
-    // first get the minimal start over vertices preceeding the edge
+    int total_length=0;
+
+    // first get the maximum start over vertices preceeding the edge
+    int max_length = 0;
     for (auto vit : eit.second.getPrevs()){
-//        vit->second.
+        // get current vertex length
+        int cur_length = this->_get_read_length_before(vit);
+        if (cur_length>max_length){max_length=cur_length;}
     }
 
-    // then for each potential site - subtract the corrected length and see if it fits into the constraints
-//    int length = 0;
-//    for (auto sm_it = sm.cbegin(); sm_it != sm.cend();){
-//        length = std::get<3>(sm_it->first) - std::get<2>(sm_it->first);
-//        if (length < this->minIntron || length > this->maxIntron){
-//            sm_it = sm.erase(sm_it);
-//        }
-//        else{
-//            ++sm_it;
-//        }
-//    }
+    total_length = total_length + max_length;
+
+    // second get the maximum end over the vertices after the edge
+    max_length=0;
+    for (auto vit : eit.second.getNexts()){
+        // get current vertex length
+        int cur_length = this->_get_read_length_after(vit);
+        if (cur_length>max_length){max_length=cur_length;}
+    }
+
+    total_length = total_length + max_length;
+    std::cout<<"total length: "<<total_length<<std::endl;
+
+    // TODO: evaluate modified edges
+    // see if they need to be removed or not
+    if(((total_length - this->stats.kmerlen) + 1) < this->minKmers){
+        // erase contents of the current map
+        sm.clear();
+    }
+}
+
+// This function computes the number of distinct vertex start sites for a given edge
+void HGraph::_get_starts(std::map<VCoords,Vertex>::iterator vit,std::vector<int>& starts){
+    if (vit->second.getInDegree()>0){ // need to follow the exon structure for reads that span multiple introns
+        // TODO: this is a little problematic at the moment, since some of the "raw" edges might have already been removed
+        //      and as such need not be evaluated. Ideally, whenever an edge is refined - it has to be changed in the main graph
+        //      however, for the time being, we shall ignore this case and see how it works without taking that into account
+
+        // for each in edge - find starts and add them to the vector of starts
+        for (auto ep_it : vit->second.getInEdges()){ // for each incoming edge
+            this->_get_starts(ep_it.first,starts);
+        }
+    }
+    else{
+        starts.emplace_back(vit->first.getStart());
+    }
+}
+
+// This function computes the number of distinct vertex end sites for a given edge
+void HGraph::_get_ends(std::map<VCoords,Vertex>::iterator vit,std::vector<int>& ends){
+    if (vit->second.getOutDegree()>0){ // need to follow the exon structure for reads that span multiple introns
+        // TODO: this is a little problematic at the moment, since some of the "raw" edges might have already been removed
+        //      and as such need not be evaluated. Ideally, whenever an edge is refined - it has to be changed in the main graph
+        //      however, for the time being, we shall ignore this case and see how it works without taking that into account
+
+        // for each in edge - find starts and add them to the vector of starts
+        for (auto ep_it : vit->second.getOutEdges()){ // for each incoming edge
+            this->_get_ends(ep_it.first,ends);
+        }
+    }
+    else{
+        ends.emplace_back(vit->first.getEnd());
+    }
+}
+
+// evaluates the number of unique ends and starts that are connected to a given edge
+void HGraph::enforce_unique_start_end(const std::pair<Edge,Aggregate_edge_props>& eit, SJS& sm){
+
+    std::vector<int>starts{},ends{};
+
+    // first get the maximum start over vertices preceeding the edge
+    for (auto vit : eit.second.getPrevs()){
+        this->_get_starts(vit,starts);
+    }
+
+    // second get the maximum end over the vertices after the edge
+    for (auto vit : eit.second.getNexts()){
+        this->_get_ends(vit,ends);
+    }
+
+    // now compute the entropy and compare to the threshold
+    if (starts.size() == 1 && ends.size() == 1){ // TODO: also needs to take into account the weight and compute perform a more informative comparison
+        sm.clear();
+    }
+
 }
 
 // parse graph and evaluate gaps and assign splice junctions and mismatches and gaps
@@ -442,9 +528,12 @@ void HGraph::parse_graph() {
         SJS sjs_map;
         evaluate_donor_acceptor(eit,sjs_map);
         enforce_constraints(sjs_map);
-        enforce_read_length(eit,sjs_map);
+//        enforce_read_length(eit,sjs_map); // TODO: currently does not quite work - introduces false negatives
+//        enforce_unique_start_end(eit,sjs_map); // TODO: currently does not quite work - introduces false negatives
 
         for(auto eit2 : sjs_map) {
+            // TODO: need to remove the old edge and include the new edges in the main graph here
+            //      so that upon the next edge evaluation everything is correctly accounted for.
             edges_fp << this->hdb->getContigFromID(eit.second.getChr()) << "\t" << "hairpin" << "\t" << "intron" << "\t"
                      << std::get<2>(eit2.first) << "\t" << std::get<3>(eit2.first) << "\t"
                      << "." << "\t" << eit.second.getStrand() << "\t" << "." << "\t" << "weight=" << eit.second.getWeight() << std::endl;
