@@ -1,6 +1,6 @@
 //
 // Modified by Ales Varabyou on 3/16/19.
-//  Created by Harold Pimentel on 10/26/11.
+// Based partially on gtf_to_fasta by Harold Pimentel from 10/26/11.
 //
 #include "HDB.h"
 

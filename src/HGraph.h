@@ -8,6 +8,7 @@
 #ifndef HAIRPIN_GRAPH_H
 #define HAIRPIN_GRAPH_H
 
+#include <algorithm>
 #include <iostream>
 #include <fstream>
 #include <map>
@@ -138,7 +139,7 @@ public:
         return 1;
     }
 
-    int getOutDegree(){return static_cast<int>(this->outEdges.size());}
+    int getOutDegree() const {return static_cast<int>(this->outEdges.size());}
     int getInDegree(){return static_cast<int>(this->inEdges.size());}
 
     struct vmap_cmp {
@@ -147,14 +148,23 @@ public:
         }
     };
 
-    std::map<std::map<VCoords,Vertex>::iterator,Edge_props, vmap_cmp> getOutEdges(){return this->outEdges;}
+    std::map<std::map<VCoords,Vertex>::iterator,Edge_props, vmap_cmp> getOutEdges() const {return this->outEdges;}
     std::map<std::map<VCoords,Vertex>::iterator,Edge_props, vmap_cmp> getInEdges(){return this->inEdges;}
+
+    void remove_out_edge(std::map<VCoords,Vertex>::iterator vit){
+        auto emap_it_found = this->outEdges.find(vit);
+        this->outEdges.erase(emap_it_found);
+    }
+    void remove_in_edge(std::map<VCoords,Vertex>::iterator vit){
+        auto emap_it_found = this->inEdges.find(vit);
+        this->inEdges.erase(emap_it_found);
+    }
 
 private:
     int weight=0;
 
     typedef std::map<std::map<VCoords,Vertex>::iterator,Edge_props,vmap_cmp> EMap;
-    typedef std::pair<std::map<std::map<VCoords,Vertex>::iterator,Edge_props>::iterator,bool> EMap_it;
+    typedef std::pair<std::map<std::map<VCoords,Vertex>::iterator,Edge_props,vmap_cmp>::iterator,bool> EMap_it;
     std::map<std::map<VCoords,Vertex>::iterator,Edge_props,vmap_cmp> outEdges{};
     std::map<std::map<VCoords,Vertex>::iterator,Edge_props,vmap_cmp> inEdges{};
     EMap_it e_it;
@@ -179,9 +189,14 @@ public:
     typedef std::map<VCoords,Vertex>::const_iterator const_iterator;
     typedef std::map<VCoords,Vertex>::reference reference;
     iterator begin() {return this->vertices.begin();}
-    const_iterator begin() const { return this->vertices.begin();}
+    const_iterator cbegin() const { return this->vertices.begin();}
     iterator end() {return this->vertices.end();}
-    const_iterator end() const { return this->vertices.end();}
+    const_iterator cend() const { return this->vertices.end();}
+
+    void remove_vt(std::map<VCoords,Vertex>::iterator vit){
+//        auto vm_it_found = this->vertices.find(vit->first);
+        this->vertices.erase(vit);
+    }
 
 private:
     std::map<VCoords,Vertex> vertices;
@@ -222,6 +237,14 @@ public:
     void addPrev(std::map<VCoords,Vertex>::iterator vt){this->prevs.emplace_back(vt);}
     std::vector<std::map<VCoords,Vertex>::iterator> getNexts() const {return this->nexts;}
     std::vector<std::map<VCoords,Vertex>::iterator> getPrevs() const {return this->prevs;}
+
+    void remove_vertex_pair(std::map<VCoords,Vertex>::iterator prev, std::map<VCoords,Vertex>::iterator next){
+        std::cout<<"removing"<<std::endl;
+        this->nexts.erase(std::remove(this->nexts.begin(), this->nexts.end(), next), this->nexts.end());
+        this->prevs.erase(std::remove(this->prevs.begin(), this->prevs.end(), prev), this->prevs.end());
+    }
+    int getInSize(){return this->nexts.size();} // return the number of incoming vertices
+    int getOutSize(){return this->prevs.size();} // return the number of outgoing vertices
 
 
 private:
@@ -272,7 +295,7 @@ private:
 
     int maxIntron=10;
     int minIntron=500000;
-    int minKmers=89; // TODO: minimum number of kmers that have to be matched from a single read - needs to be computed during runtime as a function of the read length
+    int minKmers=65; // TODO: minimum number of kmers that have to be matched from a single read - needs to be computed during runtime as a function of the read length
     struct Stats{
         int numReads=0;
         int numReadsIgnored=0;
@@ -324,7 +347,18 @@ private:
                    std::get<2>(prev) < std::get<2>(next) || std::get<3>(prev) < std::get<3>(next);
         }
     };
+
+    bool overlap(std::map<VCoords,Vertex>::iterator vit1,std::map<VCoords,Vertex>::iterator vit2);
+    int clique_length(std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp>& vts);
+    std::map<VCoords,Vertex>::iterator taylor_bfs(std::map<VCoords,Vertex>::iterator, std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp>& vts);
+    void remove_vertex(std::map<VCoords,Vertex>::iterator vit);
+    void remove_vertices(std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp>& vts);
+    void parse_vertices();
+
     typedef std::map<SJ,std::tuple<int,int>,sjs_cmp> SJS; // defines a type for a map of splice junctions
+
+    void edit_graph(const std::pair<Edge,Aggregate_edge_props>& eit, SJS& sm);
+
     void evaluate_sj(const std::pair<Edge,Aggregate_edge_props>& eit,const std::pair<std::string,double>& donor,const std::pair<std::string,double>& acceptor,SJS& sjs);
 
     void enforce_constraints(SJS& sm);
