@@ -385,6 +385,8 @@ private:
     uint8_t getEdgeStart(const std::pair<Edge,Aggregate_edge_props>& eit);
     uint8_t getEdgeEnd(const std::pair<Edge,Aggregate_edge_props>& eit);
 
+    void make_dot();
+
 };
 
 #endif //HAIRPIN_GRAPH_H
