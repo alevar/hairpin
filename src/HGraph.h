@@ -239,12 +239,13 @@ public:
     std::vector<std::map<VCoords,Vertex>::iterator> getPrevs() const {return this->prevs;}
 
     void remove_vertex_pair(std::map<VCoords,Vertex>::iterator prev, std::map<VCoords,Vertex>::iterator next){
-        std::cout<<"removing"<<std::endl;
         this->nexts.erase(std::remove(this->nexts.begin(), this->nexts.end(), next), this->nexts.end());
         this->prevs.erase(std::remove(this->prevs.begin(), this->prevs.end(), prev), this->prevs.end());
     }
-    int getInSize(){return this->nexts.size();} // return the number of incoming vertices
-    int getOutSize(){return this->prevs.size();} // return the number of outgoing vertices
+    int getOutSize(){return this->nexts.size();} // return the number of incoming vertices
+    int getInSize(){return this->prevs.size();} // return the number of outgoing vertices
+    bool isOutEmpty(){return this->nexts.empty();} // return the number of incoming vertices
+    bool isInEmpty(){return this->prevs.empty();} // return the number of outgoing vertices
 
 
 private:
