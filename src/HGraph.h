@@ -362,6 +362,8 @@ private:
 
     void evaluate_sj(const std::pair<Edge,Aggregate_edge_props>& eit,const std::pair<std::string,double>& donor,const std::pair<std::string,double>& acceptor,SJS& sjs);
 
+    void remove_overlapping_edges(SJS& sm);
+
     void enforce_constraints(SJS& sm);
 
     int _get_read_length_before(std::map<VCoords,Vertex>::iterator vit);
