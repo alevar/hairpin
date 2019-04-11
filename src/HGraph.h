@@ -203,7 +203,7 @@ private:
     std::pair<std::map<VCoords,Vertex>::iterator,bool> vm_it;
 };
 
-class Aggregate_edge_props{ // TODO: potentially entirely get rifd of storing edges in the vertices and only keep track of them here if this approach works
+class Aggregate_edge_props{ // TODO: potentially entirely get rid of storing edges in the vertices and only keep track of them here if this approach works
 public:
     Aggregate_edge_props()=default;
     Aggregate_edge_props(std::map<VCoords,Vertex>::iterator prev, std::map<VCoords,Vertex>::iterator next){
@@ -356,12 +356,13 @@ private:
     void remove_vertices(std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp>& vts);
     void parse_vertices();
 
-    typedef std::map<SJ,std::tuple<int,int>,sjs_cmp> SJS; // defines a type for a map of splice junctions
+    typedef std::map<SJ,std::tuple<double,double>,sjs_cmp> SJS; // defines a type for a map of splice junctions
 
     void edit_graph(const std::pair<Edge,Aggregate_edge_props>& eit, SJS& sm);
 
     void evaluate_sj(const std::pair<Edge,Aggregate_edge_props>& eit,const std::pair<std::string,double>& donor,const std::pair<std::string,double>& acceptor,SJS& sjs);
 
+    void filter_best_donor_acceptor(SJS& sm);
     void remove_overlapping_edges(SJS& sm);
 
     void enforce_constraints(SJS& sm);
