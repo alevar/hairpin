@@ -352,6 +352,9 @@ private:
     bool overlap(std::map<VCoords,Vertex>::iterator vit1,std::map<VCoords,Vertex>::iterator vit2);
     int clique_length(std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp>& vts);
     std::map<VCoords,Vertex>::iterator taylor_bfs(std::map<VCoords,Vertex>::iterator, std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp>& vts);
+
+    void _helper_taylor_dfs_explicit(std::map<VCoords,Vertex>::iterator cur_vit, std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp>& visited);
+    void taylor_dfs_explicit(std::map<VCoords,Vertex>::iterator cur_vit, std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp>& visited);
     void remove_vertex(std::map<VCoords,Vertex>::iterator vit);
     void remove_vertices(std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp>& vts);
     void parse_vertices();

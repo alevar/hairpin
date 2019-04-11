@@ -233,26 +233,19 @@ void HGraph::write_intron_gff() {
 //        1. Each vertex may only be allowed to have a single outgoing or ingoing edge
 //        2. There may not be parallel edges - that is no two edges may overlap by coordinates
 //        3. No two edges may exist with less than k bases between the end of the first edge and the start of the next edge
-//        4. donor/acceptor sites are weighted (canonical/semi-canonical/non-canonical)
+//        4. DONE: donor/acceptor sites are weighted (canonical/semi-canonical/non-canonical)
 //        5. Vertices at each end of the junction shall have identical weights corresponding to the evaluated edge
-//        6. Number of distinct start positions of reads that cover a splice junction can also be taken into account when computing the likelihood score
-//        7. We can also create a threshold for the number of unique start sites preceding a splice junction
-//        8. If two contradictory junctions exist with otherwise identical scores - the shorter one shall be preferred
-//        9. the number of kmers that span a vertex-edge-vertex should be no less than readlength-(kmerlen*2)
+//        6. IN PROGRESS: Number of distinct start positions of reads that cover a splice junction can also be taken into account when computing the likelihood score
+//        7. IN PROGRESS: We can also create a threshold for the number of unique start sites preceding a splice junction
+//        8. DONE: If two contradictory junctions exist with otherwise identical scores - the shorter one shall be preferred
+//        9. DONE: the number of kmers that span a vertex-edge-vertex should be no less than readlength-(kmerlen*2)
 //
 //
 //TODO: Output of the edge parser:
 //  The edge iterator is a pointer to a <key,value> pair from the edge map, where the value is of the type Aggregate_edge_props and contains a function validate();
 //  Whenever the parser decides that the splice junction is valid it should use this function to set the known flag to true
 //
-//
-//TODO: Splice junctions:
-//        GT-AG - canonical
-//        GC-AG - semi-canonical
-//        AT-CA - non-canonical
-//
-//
-//TODO: The parser has to make sure that the total number of bases contained in connected vertices is above a threshold
+//TODO: IN PROGRESS: The parser has to make sure that the total number of bases contained in connected vertices is above a threshold
 //      this is important to ensure spurious/incomplete multimappers are not present in the final graph
 //
 //
@@ -425,6 +418,30 @@ int HGraph::_get_read_length_after(std::map<VCoords,Vertex>::iterator vit){
     return cur_length;
 }
 
+// This is a helper function for the Depth First Search on explicit edges
+// TODO: needs to store the farthest distance somehow - perhaps a different algorithm
+//      also would be helpful to know the minimum distance in addition to the maximum distance
+void HGraph::_helper_taylor_dfs_explicit(std::map<VCoords,Vertex>::iterator cur_vit, std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp>& visited){
+    visited.insert(cur_vit); // mark the current vertex as visited
+
+    // iterate over all explicit edges
+    for (auto eit : cur_vit->second.getOutEdges()){
+        // if the vertex at the other end of the edge is not in visited
+        if(visited.find(eit.first) == visited.end()){ // element did not previously exist
+            visited.insert(eit.first);
+            this->_helper_taylor_dfs_explicit(eit.first,visited);
+        }
+    }
+}
+
+// This function runs a depth first search algorithm to find the longest path within the sequence of connected vertices
+// taking into account explicit edges only
+// this permits filtering out partial matches that are candidate for removal as noise-multimappers
+// (incomplete multimapper smaller than the read_length or the expected length given mismatches)
+void HGraph::taylor_dfs_explicit(std::map<VCoords,Vertex>::iterator cur_vit, std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp>& visited){
+    _helper_taylor_dfs_explicit(cur_vit,visited);
+}
+
 // This function makes sure that the total number of bases in a given read
 void HGraph::enforce_read_length(const std::pair<Edge,Aggregate_edge_props>& eit, SJS& sm){
     // first get the number of bases in the "raw" edge
@@ -574,7 +591,7 @@ void HGraph::remove_vertices(std::set<std::map<VCoords,Vertex>::iterator,Vertex:
     }
 }
 
-// TODO: this function runs a breadth first search starting with a given iterator
+// This function runs a breadth first search starting with a given iterator
 // stores all vertices that belong to current connected stretch into vector
 // returns the iterator to the start of the next clique
 std::map<VCoords,Vertex>::iterator HGraph::taylor_bfs(std::map<VCoords,Vertex>::iterator cur_vit, std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp>& visited){
@@ -634,7 +651,7 @@ int HGraph::clique_length(std::set<std::map<VCoords,Vertex>::iterator,Vertex::vm
 }
 
 // This function parses through the vertices and removes anything that does not pass vertex-specific constraints
-// such as the total length of a clique (all connected vertices
+// such as the total length of a clique (all connected vertices)
 void HGraph::parse_vertices(){
 
     std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp> cur_vertices;
