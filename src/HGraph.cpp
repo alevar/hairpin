@@ -230,8 +230,8 @@ void HGraph::write_intron_gff() {
 }
 
 //TODO: Ruleset for evaluation of potential splice junctions
-//        1. Each vertex may only be allowed to have a single outgoing or ingoing edge
-//        2. There may not be parallel edges - that is no two edges may overlap by coordinates
+//        1. INCORRECT DUE TO ALTERNATIVe SPLICING: Each vertex may only be allowed to have a single outgoing or ingoing edge
+//        2. INCORRECT DUE TO ALTERNATIVe SPLICING: There may not be parallel edges - that is no two edges may overlap by coordinates
 //        3. No two edges may exist with less than k bases between the end of the first edge and the start of the next edge
 //        4. DONE: donor/acceptor sites are weighted (canonical/semi-canonical/non-canonical)
 //        5. Vertices at each end of the junction shall have identical weights corresponding to the evaluated edge
@@ -416,30 +416,6 @@ int HGraph::_get_read_length_after(std::map<VCoords,Vertex>::iterator vit){
         cur_length=cur_length+max_length;
     }
     return cur_length;
-}
-
-// This is a helper function for the Depth First Search on explicit edges
-// TODO: needs to store the farthest distance somehow - perhaps a different algorithm
-//      also would be helpful to know the minimum distance in addition to the maximum distance
-void HGraph::_helper_taylor_dfs_explicit(std::map<VCoords,Vertex>::iterator cur_vit, std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp>& visited){
-    visited.insert(cur_vit); // mark the current vertex as visited
-
-    // iterate over all explicit edges
-    for (auto eit : cur_vit->second.getOutEdges()){
-        // if the vertex at the other end of the edge is not in visited
-        if(visited.find(eit.first) == visited.end()){ // element did not previously exist
-            visited.insert(eit.first);
-            this->_helper_taylor_dfs_explicit(eit.first,visited);
-        }
-    }
-}
-
-// This function runs a depth first search algorithm to find the longest path within the sequence of connected vertices
-// taking into account explicit edges only
-// this permits filtering out partial matches that are candidate for removal as noise-multimappers
-// (incomplete multimapper smaller than the read_length or the expected length given mismatches)
-void HGraph::taylor_dfs_explicit(std::map<VCoords,Vertex>::iterator cur_vit, std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp>& visited){
-    _helper_taylor_dfs_explicit(cur_vit,visited);
 }
 
 // This function makes sure that the total number of bases in a given read
@@ -650,10 +626,8 @@ int HGraph::clique_length(std::set<std::map<VCoords,Vertex>::iterator,Vertex::vm
     return connected_bases.size();
 }
 
-// This function parses through the vertices and removes anything that does not pass vertex-specific constraints
-// such as the total length of a clique (all connected vertices)
-void HGraph::parse_vertices(){
-
+// This function runs BFS variants and checks BFS-specific constraints
+void HGraph::enforce_bfs_constraints(){
     std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp> cur_vertices;
     int cur_clique_length = 0;
 
@@ -678,6 +652,140 @@ void HGraph::parse_vertices(){
             break;
         }
     }
+}
+
+// This is a helper function for the Depth First Search on explicit edges
+void HGraph::_helper_topological_sort_explicit(std::map<VCoords,Vertex>::iterator cur_vit,
+                                      std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp>& visited,
+                                      std::vector<std::map<VCoords,Vertex>::iterator>& stack){
+
+    visited.insert(cur_vit);
+    for (auto eit : cur_vit->second.getOutEdges()){
+        if(visited.find(eit.first) == visited.end()){ // element did not previously exist
+            this->_helper_topological_sort_explicit(eit.first,visited,stack);
+        }
+    }
+    stack.emplace_back(cur_vit);
+
+}
+
+// This function runs a depth first search algorithm to find the longest path within the sequence of connected vertices
+// taking into account explicit edges only
+// this permits filtering out partial matches that are candidate for removal as noise-multimappers
+// (incomplete multimapper smaller than the read_length or the expected length given mismatches)
+void HGraph::topological_sort_explicit(std::map<VCoords,Vertex>::iterator cur_vit,
+                              std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp>& visited,
+                              std::vector<std::map<VCoords,Vertex>::iterator>& stack){
+
+    _helper_topological_sort_explicit(cur_vit,visited,stack);
+}
+
+void HGraph::shortest_path(){
+    std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp> cur_vertices;
+    std::vector<std::map<VCoords,Vertex>::iterator> stack;
+    std::map<std::map<VCoords,Vertex>::iterator,int,Vertex::vmap_cmp> dist;
+
+    auto cur_vit = this->vertices.begin();
+    std::map<VCoords,Vertex>::iterator next_vit;
+
+    while (true){
+        if (cur_vit->second.getInDegree() == 0){ // check that the has no incoming edges
+            this->topological_sort_explicit(cur_vit,cur_vertices,stack); // topologically sort the vertices returned by BFS
+
+            // search for minimum distance
+            for(int i=0;i<stack.size();i++){ // Initialize distances to all vertices as infinite and distance; to source as 0
+                if(i+1==stack.size()){
+                    dist.insert(std::make_pair(stack[i],stack[i]->first.getLength()));
+                }
+                else{
+                    dist.insert(std::make_pair(stack[i],INF));
+                }
+            }
+
+            while (!stack.empty()){ // Process vertices in topological order
+                // Get the next vertex from topological order
+                auto u = stack.back();
+                stack.pop_back();
+
+                // Update distances of all adjacent vertices
+                std::map<VCoords,Vertex>::iterator i;
+                if (dist[u] != INF){
+                    int eit_idx = 0; // position_within_outEdges;
+                    for (auto ei : u->second.getOutEdges()) {
+                        i = ei.first;
+//
+                        if (dist[i] > dist[u] + (int)i->first.getLength()) {
+                            dist[i] = dist[u] + (int)i->first.getLength();
+                        }
+                    }
+                }
+            }
+            // final distances are in dist
+
+            // search for maximum distance
+
+            cur_vertices.clear(); // clear the contents of the visited vertices
+            stack.clear(); // clear the contents of the stack
+        }
+
+        cur_vit++;
+
+        if (cur_vit == this->vertices.end()){
+            break;
+        }
+    }
+}
+
+// This is a helper function for the Depth First Search on explicit edges
+// TODO: needs to store the farthest distance somehow - perhaps a different algorithm
+//      also would be helpful to know the minimum distance in addition to the maximum distance
+void HGraph::_helper_taylor_dfs_explicit(std::map<VCoords,Vertex>::iterator cur_vit, std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp>& visited){
+    visited.insert(cur_vit); // mark the current vertex as visited
+
+    // iterate over all explicit edges
+    for (auto eit : cur_vit->second.getOutEdges()){
+        // if the vertex at the other end of the edge is not in visited
+        if(visited.find(eit.first) == visited.end()){ // element did not previously exist
+            visited.insert(eit.first);
+            this->_helper_taylor_dfs_explicit(eit.first,visited);
+        }
+    }
+}
+
+// This function runs a depth first search algorithm to find the longest path within the sequence of connected vertices
+// taking into account explicit edges only
+// this permits filtering out partial matches that are candidate for removal as noise-multimappers
+// (incomplete multimapper smaller than the read_length or the expected length given mismatches)
+void HGraph::taylor_dfs_explicit(std::map<VCoords,Vertex>::iterator cur_vit, std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp>& visited){
+    _helper_taylor_dfs_explicit(cur_vit,visited);
+}
+
+// This function runs DFS variants and checks DFS-specific constraints
+void HGraph::enforce_dfs_constraints(){
+    std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp> cur_vertices;
+    int cur_clique_length = 0;
+
+    auto cur_vit = this->vertices.begin();
+    std::map<VCoords,Vertex>::iterator next_vit;
+
+    while (true){
+        this->taylor_dfs_explicit(cur_vit,cur_vertices);
+
+        cur_vit++;
+
+        if (cur_vit == this->vertices.end()){
+            break;
+        }
+    }
+}
+
+// This function parses through the vertices and removes anything that does not pass vertex-specific constraints
+// such as the total length of a clique (all connected vertices)
+void HGraph::parse_vertices(){
+
+    enforce_bfs_constraints();
+
+//    enforce_dfs_constraints(); // TODO: see if needed after topological sort
 }
 
 // This function selects the best possible combination of donor-acceptor sites
