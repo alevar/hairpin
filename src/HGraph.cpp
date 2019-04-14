@@ -533,10 +533,14 @@ void HGraph::edit_graph(const std::pair<Edge,Aggregate_edge_props>& eit, SJS& sm
 // This function tests for an overlap between two vertices
 // this method only works in one direction where vit2 is greater than vit1
 bool HGraph::overlap(std::map<VCoords,Vertex>::iterator vit1,std::map<VCoords,Vertex>::iterator vit2){
+//    std::cerr<<"\t"<<vit1->first.getStart() << "\t"<<vit1->first.getEnd() <<"\t"<< vit2->first.getStart() <<"\t"<< vit2->first.getEnd()<<"\t"<<(vit1->first.getChr() == vit2->first.getChr() &&
+//                                                                                                                                                vit1->first.getStrand() == vit2->first.getStrand() &&
+//                                                                                                                                                vit2->first.getStart() < vit1->first.getEnd() &&
+//                                                                                                                                                vit1->first.getStart() < vit2->first.getEnd())<<std::endl;
     return vit1->first.getChr() == vit2->first.getChr() &&
            vit1->first.getStrand() == vit2->first.getStrand() &&
-           vit1->first.getStart() <= vit2->first.getStart() &&
-           vit1->first.getStart() <= vit2->first.getEnd();
+           vit2->first.getStart() < vit1->first.getEnd() &&
+           vit1->first.getStart() < vit2->first.getEnd();
 }
 
 void add_bases_to_set(int start, int end, std::set<int>& cb){
@@ -715,9 +719,9 @@ void HGraph::enforce_bfs_constraints(){
 
         cur_clique_length = clique_length(cur_vertices);
 
-//        std::cerr<<"evaluated: "<<cur_clique_length<<"\t"<<cur_vertices.size()<<"\t";
+        std::cerr<<"evaluated: "<<cur_clique_length<<"\t"<<cur_vertices.size()<<"\t";
 //        for (auto& vit : cur_vertices){std::cerr<<this->vertices._exists(vit)<<"\t";}
-//        std::cerr<<std::endl;
+        std::cerr<<std::endl;
 
         if (cur_clique_length < 151){
 //            this->remove_vertices(cur_vertices);
