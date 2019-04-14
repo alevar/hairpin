@@ -11,12 +11,16 @@
 #include <algorithm>
 #include <iostream>
 #include <fstream>
+#include <queue>
+#include <stack>
 #include <map>
 
 #include "FastaTools.h"
 
 #include "HDB.h"
 #include "MinMap.h"
+
+#define INF INT_MAX
 
 class Vertex;
 class VCoords;
@@ -50,7 +54,9 @@ public:
     ~VCoords()=default;
 
     bool operator< (const VCoords& vc) const{
-        return (this->chrID < vc.chrID || this->strand < vc.strand || (this->pos <  vc.pos) || this->getEnd() < vc.getEnd()); // the coordinate test should return equal if
+//        return (this->chrID < vc.chrID || this->strand < vc.strand || (this->pos <  vc.pos) || (this->getEnd() < vc.getEnd())); // the coordinate test should return equal if
+        uint32_t this_end = this->getEnd(), vc_end = vc.getEnd();
+        return std::tie(this->chrID,this->strand,this->pos,this_end) < std::tie(vc.chrID,vc.strand,vc.pos,vc_end);
     }
     bool operator> (const VCoords& vc) const{
         return (this->chrID > vc.chrID || this->strand > vc.strand || this->pos >  vc.pos || this->getEnd() > vc.getEnd());
@@ -76,7 +82,7 @@ public:
     uint8_t getChr() const {return this->chrID;}
     uint8_t getStrand() const {return this->strand;}
     uint32_t getStart() const {return this->pos;}
-    uint32_t getEnd() const {return this->pos+this->length;}
+    uint32_t getEnd() const {return this->pos+(uint32_t)this->length;}
     uint8_t getLength() const {return this->length;}
 
     struct coord_hash { // in case it is implemented as an unordered_map
@@ -153,10 +159,16 @@ public:
 
     void remove_out_edge(std::map<VCoords,Vertex>::iterator vit){
         auto emap_it_found = this->outEdges.find(vit);
+        if (emap_it_found == this->outEdges.end()){
+            std::cerr<<"out edge not found"<<std::endl;
+        }
         this->outEdges.erase(emap_it_found);
     }
     void remove_in_edge(std::map<VCoords,Vertex>::iterator vit){
         auto emap_it_found = this->inEdges.find(vit);
+        if (emap_it_found == this->inEdges.end()){
+            std::cerr<<"in edge not found"<<std::endl;
+        }
         this->inEdges.erase(emap_it_found);
     }
 
@@ -189,13 +201,30 @@ public:
     typedef std::map<VCoords,Vertex>::const_iterator const_iterator;
     typedef std::map<VCoords,Vertex>::reference reference;
     iterator begin() {return this->vertices.begin();}
-    const_iterator cbegin() const { return this->vertices.begin();}
+    const_iterator cbegin() const { return this->vertices.cbegin();}
     iterator end() {return this->vertices.end();}
-    const_iterator cend() const { return this->vertices.end();}
+    const_iterator cend() const { return this->vertices.cend();}
+
+    bool _exists(VMap::iterator vit){
+        return this->vertices.find(vit->first) != this->vertices.end();
+    }
+    bool _exists(VMap::const_iterator vit){
+        return this->vertices.find(vit->first) != this->vertices.end();
+    }
 
     void remove_vt(std::map<VCoords,Vertex>::iterator vit){
-//        auto vm_it_found = this->vertices.find(vit->first);
+        VCoords searching_vit = vit->first;
+        std::cerr<<vit->first.getStart()<<std::endl;
+        auto vm_it_found = this->vertices.find(searching_vit);
+        if (vm_it_found == this->vertices.end()){
+            std::cerr<<"vertex not found before erase"<<std::endl;
+        }
         this->vertices.erase(vit);
+        vm_it_found = this->vertices.find(searching_vit);
+        if (vm_it_found == this->vertices.end()){
+            std::cerr<<"vertex not found after erase"<<std::endl;
+        }
+        std::cerr<<vit->first.getStart()<<std::endl;
     }
 
 private:
@@ -239,8 +268,10 @@ public:
     std::vector<std::map<VCoords,Vertex>::iterator> getPrevs() const {return this->prevs;}
 
     void remove_vertex_pair(std::map<VCoords,Vertex>::iterator prev, std::map<VCoords,Vertex>::iterator next){
-        this->nexts.erase(std::remove(this->nexts.begin(), this->nexts.end(), next), this->nexts.end());
-        this->prevs.erase(std::remove(this->prevs.begin(), this->prevs.end(), prev), this->prevs.end());
+        VP::iterator nit = this->nexts.erase(std::remove(this->nexts.begin(), this->nexts.end(), next), this->nexts.end());
+        VP::iterator pit = this->prevs.erase(std::remove(this->prevs.begin(), this->prevs.end(), prev), this->prevs.end());
+        if (nit == this->nexts.end()){std::cerr<<"nexts are empty: "<<this->nexts.size()<<std::endl;}
+        if (pit == this->prevs.end()){std::cerr<<"prevs are empty: "<<this->prevs.size()<<std::endl;}
     }
     int getOutSize(){return this->nexts.size();} // return the number of incoming vertices
     int getInSize(){return this->prevs.size();} // return the number of outgoing vertices
@@ -283,8 +314,11 @@ private:
     typedef std::pair<VIT,VIT> Edge;
     struct edge_cmp { // the comparator in this case simply compares if the splice site coordinates are identical
         bool operator()(const Edge& prev, const Edge& next) const {
-            return prev.first->first.getEnd() < next.first->first.getEnd()
-            || prev.second->first.getStart() < next.second->first.getStart();
+            uint32_t prev_end = prev.first->first.getEnd(), next_end = next.first->first.getEnd();
+            uint32_t prev_start = prev.second->first.getStart(), next_start = next.second->first.getStart();
+            return std::tie(prev_end,prev_start) < std::tie(next_end,next_start);
+//            return prev.first->first.getEnd() < next.first->first.getEnd()
+//            || prev.second->first.getStart() < next.second->first.getStart();
         }
     };
 
@@ -321,8 +355,11 @@ private:
 
     struct map_vit_cmp { // this comparator can be applied whenever there is a need to build a sorted object (eg. std::map) with std::map<VCoords,Vertex>::iterator as a key
         bool operator()(const std::map<VCoords,Vertex>::iterator& prev, const std::map<VCoords,Vertex>::iterator& next) const {
-            return prev->first.getChr() < next->first.getChr() || prev->first.getStrand() < next->first.getStrand() ||
-                prev->first.getStart() < next->first.getStart() || prev->first.getEnd() < next->first.getEnd();
+            uint32_t prev_chr = prev->first.getChr(), prev_strand = prev->first.getStrand(), prev_start = prev->first.getStart(), prev_end = prev->first.getEnd();
+            uint32_t next_chr = next->first.getChr(), next_strand = next->first.getStrand(), next_start = next->first.getStart(), next_end = next->first.getEnd();
+            return std::tie(prev_chr,prev_strand,prev_start,prev_end) < std::tie(next_chr,next_strand,next_start,next_end);
+//            return prev->first.getChr() < next->first.getChr() || prev->first.getStrand() < next->first.getStrand() ||
+//                prev->first.getStart() < next->first.getStart() || prev->first.getEnd() < next->first.getEnd();
         }
     };
 
@@ -344,6 +381,7 @@ private:
     typedef std::tuple<uint8_t,uint8_t,uint32_t,uint32_t> SJ; // defines the type of a splice junction
     struct sjs_cmp { // Comparator for the SJS map
         bool operator()(const SJ& prev, const SJ& next) const {
+//            return std::tie(std::get<0>(prev),std::get<1>(prev),std::get<2>(prev),std::get<3>(prev)) < std::tie(std::get<0>(next),std::get<1>(next),std::get<2>(next),std::get<3>(next));
             return std::get<0>(prev) < std::get<0>(next) || std::get<1>(prev) < std::get<1>(next) ||
                    std::get<2>(prev) < std::get<2>(next) || std::get<3>(prev) < std::get<3>(next);
         }
@@ -353,10 +391,21 @@ private:
     int clique_length(std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp>& vts);
     std::map<VCoords,Vertex>::iterator taylor_bfs(std::map<VCoords,Vertex>::iterator, std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp>& vts);
 
-    void _helper_taylor_dfs_explicit(std::map<VCoords,Vertex>::iterator cur_vit, std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp>& visited);
-    void taylor_dfs_explicit(std::map<VCoords,Vertex>::iterator cur_vit, std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp>& visited);
+    void _helper_taylor_dfs_explicit(std::map<VCoords,Vertex>::iterator cur_vit, std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp>& visited,std::vector<int>& lens,int cur_len);
+    void taylor_dfs_explicit(std::map<VCoords,Vertex>::iterator cur_vit, std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp>& visited,std::vector<int>& lens);
+
+    void _helper_topological_sort_explicit(std::map<VCoords,Vertex>::iterator cur_vit,
+            std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp>& visited,
+            std::vector<std::map<VCoords,Vertex>::iterator>& stack);
+    void topological_sort_explicit(std::map<VCoords,Vertex>::iterator cur_vit,
+            std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp>& visited,
+            std::vector<std::map<VCoords,Vertex>::iterator>& stack);
+    void shortest_path();
+
     void remove_vertex(std::map<VCoords,Vertex>::iterator vit);
     void remove_vertices(std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp>& vts);
+    void enforce_bfs_constraints();
+    void enforce_dfs_constraints();
     void parse_vertices();
 
     typedef std::map<SJ,std::tuple<double,double>,sjs_cmp> SJS; // defines a type for a map of splice junctions

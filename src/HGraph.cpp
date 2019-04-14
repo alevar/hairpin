@@ -123,6 +123,9 @@ void HGraph::add_read(std::string &read) {
                         case_one_it=std::find(case_one.begin(),case_one.end(),cv.second); // find the corresponding case_one - deal with it and remove from case ones
                         if (case_one_it != case_one.end()){ // found the case one entry
                             cur_vertex_it = this->add_vertex(std::get<0>(cv.second.first), std::get<1>(cv.second.first), std::get<2>(cv.second.first),(uint8_t)cv.second.second.first);
+//                            if (this->vertices._exists(cur_vertex_it)==0){
+//                                std::cerr<<"first insert fail"<<std::endl;
+//                            }
                             extends_final.insert(std::make_pair(cur_vertex_it,case_one_it->second.second)); // need to move it to extends final first
                             extends[case_one_it->first].first++; // increment the current length in case_one
 //                            extends[case_one_it->first].second++; // update the position of the last kmer in the extend
@@ -134,20 +137,18 @@ void HGraph::add_read(std::string &read) {
                         }
                         else{
                             cur_vertex_it = this->add_vertex(std::get<0>(cv.second.first), std::get<1>(cv.second.first), std::get<2>(cv.second.first),(uint8_t)cv.second.second.first);
-                            extends_final.insert(std::make_pair(cur_vertex_it,cv.second.second.second));
-
-//                            std::cout<<"\t2: "<<kmer<<std::endl;
-
-//                            if (cur_vertex_it->first.getEnd() == 70567){
-//                                std::cout<<read<<std::endl;
+//                            if (this->vertices._exists(cur_vertex_it)==0){
+//                                std::cerr<<"second insert fail"<<std::endl;
+//                                std::cerr<<read<<std::endl;
+//                                std::cerr<<this->vertices.getSize()<<std::endl;
 //                            }
+                            extends_final.insert(std::make_pair(cur_vertex_it,cv.second.second.second));
 
                             extends.insert(cv.first);
                         }
                     }
                     for (auto cv : case_one){
                         extends[cv.first].first++;
-//                        extends[cv.first].second++; // update the position of the last kmer in the extend
                     } // now process the remaining entries in case one
 //                    for (auto cv : case_three){extends.insert(cv);} // should this remove any from extends?
                 }
@@ -168,10 +169,15 @@ void HGraph::add_read(std::string &read) {
     //merge extends with the extends_final
     for (auto ex : extends){
         cur_vertex_it = this->add_vertex(std::get<0>(ex.first), std::get<1>(ex.first), std::get<2>(ex.first),(uint8_t)ex.second.first);
+//        if (this->vertices._exists(cur_vertex_it) == 0){
+//            std::cerr<<"third insert fail"<<std::endl;
+//            std::cerr<<read<<std::endl;
+//            std::cerr<<this->vertices.getSize()<<std::endl;
+//        }
         extends_final.insert(std::make_pair(cur_vertex_it,ex.second.second));
     }
     std::map<std::map<VCoords,Vertex>::iterator,uint8_t>::iterator ci1,ci2;
-    int counter=0;
+
     for (ci1=extends_final.begin();ci1!=std::prev(extends_final.end());ci1++){
         // create the first vertex
         for(ci2=std::next(ci1);ci2!=extends_final.end();ci2++){
@@ -180,12 +186,22 @@ void HGraph::add_read(std::string &read) {
 
             int kmerDist = (ci2->second - (ci1->second + (ci1->first->first.getLength()-this->stats.kmerlen)) ); // number of kmers separating the two vertices in the given read
 
-            if (dist > 0 && dist <= this->maxIntron && // is not backward and is not greater than the maximum intron length; no minum threshold to permit edges to form for errors
-                    kmerDist <= this->stats.kmerlen && kmerDist >= this->stats.kmerlen/2){ // follows the expected number of missed kmers; the division by two here is due to the fact that an overhang can not be in the second half, since otherwise there would not be enough space on the receiving end
-                this->add_edge(ci1->first,ci2->first); // form an edge
+            if (dist > 0 &&
+                dist <= this->maxIntron && // is not backward and is not greater than the maximum intron length; no minum threshold to permit edges to form for errors
+                kmerDist <= this->stats.kmerlen &&
+                kmerDist >= this->stats.kmerlen/2){ // follows the expected number of missed kmers; the division by two here is due to the fact that an overhang can not be in the second half, since otherwise there would not be enough space on the receiving end
+                    this->add_edge(ci1->first,ci2->first); // form an edge
             }
         }
     }
+
+//    for (auto vit_test = this->vertices.begin();vit_test!=this->vertices.end();vit_test++){
+//        if (this->vertices._exists(vit_test) == 0){
+//            std::cerr<<"\t\t"<<read<<std::endl;
+//            std::cerr<<this->vertices.getSize()<<std::endl;
+//            exit(-1);
+//        }
+//    }
 }
 
 // print general statistics about the quantification process
@@ -530,6 +546,7 @@ void add_bases_to_set(int start, int end, std::set<int>& cb){
 }
 
 void HGraph::remove_vertex(std::map<VCoords,Vertex>::iterator vit){
+    std::cerr<<"REMOVING VERTICES"<<std::endl;
     std::map<Edge,Aggregate_edge_props,edge_cmp>::iterator cur_emap_it;
     for (auto eit : vit->second.getInEdges()){ // for all incoming edges
         // first find iterator to the edge
@@ -539,8 +556,24 @@ void HGraph::remove_vertex(std::map<VCoords,Vertex>::iterator vit){
             cur_emap_it->second.remove_vertex_pair(eit.first, vit);
 
             if (cur_emap_it->second.isInEmpty() && cur_emap_it->second.isOutEmpty()){
+                std::cerr<<"removing emap entry: IN"<<std::endl;
                 this->emap.erase(cur_emap_it); // remove the edge all together
+                std::map<Edge,Aggregate_edge_props,edge_cmp>::iterator ett_it = this->emap.find(std::make_pair(eit.first,vit));
+                if (ett_it != this->emap.end()){
+                    std::cerr<<"edge not removed IN"<<std::endl;
+                }
             }
+            else{
+                if(cur_emap_it->second.isInEmpty()){
+                    std::cerr<<"\t\tIN inEmpty"<<std::endl;
+                }
+                if(cur_emap_it->second.isOutEmpty()){
+                    std::cerr<<"\t\tIN outEmpty"<<std::endl;
+                }
+            }
+        }
+        else{
+            std::cerr<<"\t\t\t\t===============\n\t\t\t\tERROR IN EDGES\n\t\t\t\t================"<<std::endl;
         }
         eit.first->second.remove_out_edge(vit); // now need to remove the association from the previous vertex
     }
@@ -552,8 +585,24 @@ void HGraph::remove_vertex(std::map<VCoords,Vertex>::iterator vit){
             cur_emap_it->second.remove_vertex_pair(vit,eit.first);
 
             if (cur_emap_it->second.isInEmpty() && cur_emap_it->second.isOutEmpty()){
+                std::cerr<<"removing emap entry: OUT"<<std::endl;
                 this->emap.erase(cur_emap_it); // remove the edge all together
+                std::map<Edge,Aggregate_edge_props,edge_cmp>::iterator ett_it = this->emap.find(std::make_pair(vit,eit.first));
+                if (ett_it != this->emap.end()){
+                    std::cerr<<"edge not removed OUT"<<std::endl;
+                }
             }
+            else{
+                if(cur_emap_it->second.isInEmpty()){
+                    std::cerr<<"\t\tOUT inEmpty"<<std::endl;
+                }
+                if(cur_emap_it->second.isOutEmpty()){
+                    std::cerr<<"\t\tOUT outEmpty"<<std::endl;
+                }
+            }
+        }
+        else{
+            std::cerr<<"\t\t\t\t===============\n\t\t\t\tERROR OUT EDGES\n\t\t\t\t================"<<std::endl;
         }
         eit.first->second.remove_in_edge(vit);
     }
@@ -562,7 +611,9 @@ void HGraph::remove_vertex(std::map<VCoords,Vertex>::iterator vit){
 
 // evaluates connected bases and removes related vertices and edges from the graph
 void HGraph::remove_vertices(std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp>& vts){
+    std::cerr<<"========================="<<std::endl;
     for (auto vit : vts){
+        std::cerr<<"\t\t\t\t\t"<<vit->first.getStart()<<" : "<<this->vertices._exists(vit)<<std::endl;
         this->remove_vertex(vit);
     }
 }
@@ -581,6 +632,7 @@ std::map<VCoords,Vertex>::iterator HGraph::taylor_bfs(std::map<VCoords,Vertex>::
     queue.emplace_back(cur_vit);
 
     auto last_vit = cur_vit;
+    auto last_vit_counter = std::distance(this->vertices.begin(),cur_vit);
 
     while(!queue.empty()){
         // deque a vertex from queue and print it
@@ -595,19 +647,31 @@ std::map<VCoords,Vertex>::iterator HGraph::taylor_bfs(std::map<VCoords,Vertex>::
             if(visited.find(eit.first) == visited.end()){ // element did not previously exist
                 visited.insert(eit.first);
                 queue.emplace_back(eit.first);
+//                int cur_vit_counter = std::distance(this->vertices.begin(),eit.first);
+//                std::cout<<"cur_pos edge: "<<cur_vit_counter<<std::endl;
+//                if (cur_vit_counter > last_vit_counter){
+//                    last_vit_counter = cur_vit_counter;
+//                    last_vit = eit.first;
+//                }
                 if (last_vit->first < eit.first->first){ // is this vertex a better candidate for the last vertex in the sequence?
                     last_vit = eit.first;
                 }
             }
         }
 
-        // check if implicit edges exist
+//         check if implicit edges exist
         next_vit = cur_vit;
         next_vit++;
         if (this->overlap(cur_vit,next_vit)){
             if (visited.find(next_vit) == visited.end()){
                 visited.insert(next_vit);
                 queue.emplace_back(next_vit);
+//                int cur_vit_counter = std::distance(this->vertices.begin(),next_vit);
+//                std::cout<<"cur_pos next: "<<cur_vit_counter<<std::endl;
+//                if (cur_vit_counter > last_vit_counter){
+//                    last_vit_counter = cur_vit_counter;
+//                    last_vit = next_vit;
+//                }
                 if(last_vit->first < next_vit->first){ // is this vertex a better candidate for the last vertex in the sequence?
                     last_vit = next_vit;
                 }
@@ -615,6 +679,7 @@ std::map<VCoords,Vertex>::iterator HGraph::taylor_bfs(std::map<VCoords,Vertex>::
         }
     }
     return last_vit;
+
 }
 
 // this function computes the total number of bases in a given clique
@@ -635,13 +700,27 @@ void HGraph::enforce_bfs_constraints(){
     std::map<VCoords,Vertex>::iterator next_vit;
 
     while (true){
+//        std::cerr<<"++++++++++++++++++++++++"<<std::endl;
+
         next_vit = this->taylor_bfs(cur_vit,cur_vertices);
+
+//        std::cerr<<"distance next_vit before: "<<std::distance(this->vertices.begin(),next_vit)<<std::endl;
+//        std::cerr<<"cur_distances: ";
+//        for (auto& vit : cur_vertices){std::cerr<<std::distance(this->vertices.begin(),vit)<<"\t";}
+//        std::cerr<<std::endl;
+
         next_vit++;
 
+//        std::cerr<<"distance next_vit after: "<<std::distance(this->vertices.begin(),next_vit)<<std::endl;
+
         cur_clique_length = clique_length(cur_vertices);
-//        std::cout<<"evaluated: "<<"\t"<<cur_clique_length<<std::endl;
+
+//        std::cerr<<"evaluated: "<<cur_clique_length<<"\t"<<cur_vertices.size()<<"\t";
+//        for (auto& vit : cur_vertices){std::cerr<<this->vertices._exists(vit)<<"\t";}
+//        std::cerr<<std::endl;
+
         if (cur_clique_length < 151){
-            this->remove_vertices(cur_vertices);
+//            this->remove_vertices(cur_vertices);
         }
         // clear the vertex sequence
         cur_vertices.clear();
@@ -739,15 +818,18 @@ void HGraph::shortest_path(){
 // This is a helper function for the Depth First Search on explicit edges
 // TODO: needs to store the farthest distance somehow - perhaps a different algorithm
 //      also would be helpful to know the minimum distance in addition to the maximum distance
-void HGraph::_helper_taylor_dfs_explicit(std::map<VCoords,Vertex>::iterator cur_vit, std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp>& visited){
+void HGraph::_helper_taylor_dfs_explicit(std::map<VCoords,Vertex>::iterator cur_vit, std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp>& visited, std::vector<int>& lens,int cur_len){
     visited.insert(cur_vit); // mark the current vertex as visited
+    if (cur_vit->second.getOutEdges().empty()){ // found an end
+        lens.emplace_back(cur_len+(int)cur_vit->first.getLength());
+    }
 
     // iterate over all explicit edges
     for (auto eit : cur_vit->second.getOutEdges()){
         // if the vertex at the other end of the edge is not in visited
         if(visited.find(eit.first) == visited.end()){ // element did not previously exist
             visited.insert(eit.first);
-            this->_helper_taylor_dfs_explicit(eit.first,visited);
+            this->_helper_taylor_dfs_explicit(eit.first,visited,lens,cur_len+(int)cur_vit->first.getLength());
         }
     }
 }
@@ -756,20 +838,37 @@ void HGraph::_helper_taylor_dfs_explicit(std::map<VCoords,Vertex>::iterator cur_
 // taking into account explicit edges only
 // this permits filtering out partial matches that are candidate for removal as noise-multimappers
 // (incomplete multimapper smaller than the read_length or the expected length given mismatches)
-void HGraph::taylor_dfs_explicit(std::map<VCoords,Vertex>::iterator cur_vit, std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp>& visited){
-    _helper_taylor_dfs_explicit(cur_vit,visited);
+void HGraph::taylor_dfs_explicit(std::map<VCoords,Vertex>::iterator cur_vit, std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp>& visited,std::vector<int>& lens){
+    _helper_taylor_dfs_explicit(cur_vit,visited,lens,0);
 }
 
 // This function runs DFS variants and checks DFS-specific constraints
 void HGraph::enforce_dfs_constraints(){
     std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp> cur_vertices;
-    int cur_clique_length = 0;
+    std::vector<int> lens;
+    __gnu_cxx::__normal_iterator<int *, std::vector<int, std::allocator<int>>> min_len,max_len;
 
     auto cur_vit = this->vertices.begin();
     std::map<VCoords,Vertex>::iterator next_vit;
 
     while (true){
-        this->taylor_dfs_explicit(cur_vit,cur_vertices);
+        if (cur_vit->second.getInDegree()==0){ // makes sure that dfs is initiated only at the first vertex created by a read in a given locus
+//            std::cout<<"hello2"<<std::endl;
+            this->taylor_dfs_explicit(cur_vit,cur_vertices,lens);
+            min_len = std::min_element(std::begin(lens),std::end(lens));
+            max_len = std::max_element(std::begin(lens),std::end(lens));
+            if (std::end(lens)!=min_len && std::end(lens)!=max_len){
+//                std::cout<<"min: "<<*min_len<<"\tmax_len: "<<*max_len<<std::endl;
+            }
+            if(*min_len < 89 && *max_len < 89){ // TODO: fix remove vertices here - something's wrong
+//                this->remove_vertices(cur_vertices);
+//                std::cout<<"hello"<<std::endl;
+            }
+        }
+        lens.clear();
+
+        cur_vertices.clear();
+//        std::cout<<"hello1"<<std::endl;
 
         cur_vit++;
 
@@ -785,7 +884,9 @@ void HGraph::parse_vertices(){
 
     enforce_bfs_constraints();
 
-//    enforce_dfs_constraints(); // TODO: see if needed after topological sort
+    // shortest_path(); // TODO: see if needed at all - might be useful for the longest path traversal
+
+//    enforce_dfs_constraints();
 }
 
 // This function selects the best possible combination of donor-acceptor sites
@@ -868,6 +969,16 @@ void HGraph::make_dot(){
 
 // parse graph and evaluate gaps and assign splice junctions and mismatches and gaps
 void HGraph::parse_graph() {
+
+//    for (auto vit = this->vertices.begin();vit!=this->vertices.end();vit++){
+//        if (this->vertices._exists(vit) == 0){
+//            std::cerr<<"the iterator to the vertex is not found in the map of vertices"<<std::endl;
+//        }
+//        else{
+//
+//        }
+//    }
+
     // first need to parse the vertices, and remove any stretches that do not pass vertex-specific constraints
     std::cerr<<"\tparsing vertices"<<std::endl;
     this->parse_vertices();
