@@ -76,6 +76,10 @@ public:
     std::string getContigFromID(uint8_t id){return id_to_contig[id].first;}
     uint8_t getIDFromContig(std::string id){return contig_to_id[id];}
 
+    std::string getContigStr(uint8_t id){
+        return this->contigs[id];
+    }
+
     void generate_sq(std::ofstream& fp);
 
 private:
@@ -125,6 +129,10 @@ private:
     void load_genom_db(std::ifstream& stream);
     void load_db_info(std::ifstream& stream);
     void load_contig_info(std::ifstream& fp);
+
+    void load_contigs();
+
+    std::map<uint8_t,std::string> contigs;
 };
 
 #endif //HAIRPIN_DB_H

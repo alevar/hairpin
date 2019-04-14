@@ -260,9 +260,8 @@ uint8_t HGraph::getEdgeEnd(const std::pair<HGraph::Edge, Aggregate_edge_props> &
 
 // this function identifies all possible precise splice junctions given one potential splice junction (edge)
 // the evaluation is based entirely on the donor/acceptor pairs
-void HGraph::evaluate_sj(const std::pair<Edge,Aggregate_edge_props>& eit,const std::pair<std::string,double>& donor,const std::pair<std::string,double>& acceptor, SJS& sj_map){
-    std::string sub_seq, start_seq, end_seq;
-    this->getGenomeSubstr(eit.first,this->stats.kmerlen-2,sub_seq); // first get fasta sequence
+void HGraph::evaluate_sj(const std::pair<Edge,Aggregate_edge_props>& eit,const std::pair<std::string,double>& donor,const std::pair<std::string,double>& acceptor, SJS& sj_map, std::string& sub_seq){
+    std::string start_seq, end_seq;
     start_seq = sub_seq.substr(0,this->stats.kmerlen); // get sequence for the potential start of the splice junction
     std::transform(start_seq.begin(), start_seq.end(), start_seq.begin(), ::toupper);
     end_seq = sub_seq.substr(sub_seq.length()-(this->stats.kmerlen),this->stats.kmerlen); // get sequence for the potential end of the splice junction
@@ -314,9 +313,11 @@ void HGraph::evaluate_sj(const std::pair<Edge,Aggregate_edge_props>& eit,const s
 
 // this function runs splice junction verification for all donor/acceptor pairs
 void HGraph::evaluate_donor_acceptor(const std::pair<Edge,Aggregate_edge_props>& eit, SJS& sm){
+    std::string sub_seq;
+    this->getGenomeSubstr(eit.first,this->stats.kmerlen-2,sub_seq); // first get fasta sequence
     for (const auto& dit : this->donors) { // iterate over all the donors
         for (const auto& ait : this->acceptors) { // iterate over all acceptors
-            evaluate_sj(eit,dit,ait,sm);
+            evaluate_sj(eit,dit,ait,sm,sub_seq);
         }
     }
 }
@@ -928,31 +929,19 @@ void HGraph::to_sam(std::string& cl) {
 
 int HGraph::getGenomeSubstr(Edge et,int overhang, std::string& sub_seq){ // get substring from the genome based on the edges
 
-    FastaReader fastaReader(this->hdb->getGenomeFname());
-    FastaRecord cur_contig;
+    int start = et.first->first.getEnd()-overhang;
+    int length = (et.second->first.getStart()+overhang)-start;
+    sub_seq = this->hdb->getContigStr(et.first->first.getChr()).substr(start, length);
 
-    while (fastaReader.good()) {
-        fastaReader.next(cur_contig);
-
-        uint8_t contigID = this->hdb->getIDFromContig(cur_contig.id_); //this is the id of the new contig
-
-        if (contigID == et.first->first.getChr()){ // correct contig found
-            int start = et.first->first.getEnd()-overhang;
-            int length = (et.second->first.getStart()+overhang)-start;
-            sub_seq=cur_contig.seq_.substr(start, length);
-
-            if(et.first->first.getStrand()=='-'){ // need to reverse complement
-                char *rev_sub_seq = new char[sub_seq.length()+1];
-                strcpy(rev_sub_seq, sub_seq.c_str());
-                reverseComplement(rev_sub_seq, length);
-                sub_seq = rev_sub_seq;
-                delete[] rev_sub_seq;
-            }
-
-            return 1;
-        }
+    if(et.first->first.getStrand()=='-'){ // need to reverse complement
+        char *rev_sub_seq = new char[sub_seq.length()+1];
+        strcpy(rev_sub_seq, sub_seq.c_str());
+        reverseComplement(rev_sub_seq, length);
+        sub_seq = rev_sub_seq;
+        delete[] rev_sub_seq;
     }
-    return 0;
+
+    return 1;
 }
 
 int HGraph::getGenomeSubstr(uint8_t chrID,int8_t strand, uint32_t start, uint8_t length, std::string& sub_seq){

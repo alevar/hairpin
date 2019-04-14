@@ -388,7 +388,7 @@ private:
 
     void edit_graph(const std::pair<Edge,Aggregate_edge_props>& eit, SJS& sm);
 
-    void evaluate_sj(const std::pair<Edge,Aggregate_edge_props>& eit,const std::pair<std::string,double>& donor,const std::pair<std::string,double>& acceptor,SJS& sjs);
+    void evaluate_sj(const std::pair<Edge,Aggregate_edge_props>& eit,const std::pair<std::string,double>& donor,const std::pair<std::string,double>& acceptor,SJS& sjs, std::string& sub_seq);
 
     void filter_best_donor_acceptor(SJS& sm);
     void remove_overlapping_edges(SJS& sm);

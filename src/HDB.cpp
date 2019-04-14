@@ -428,6 +428,19 @@ void HDB::load_trans_db(std::ifstream& stream) {
     }
 }
 
+// This function preloads all the contigs into memory for efficient lookup of splice junctions
+void HDB::load_contigs(){
+    FastaReader fastaReader(this->getGenomeFname());
+    FastaRecord cur_contig;
+
+    while (fastaReader.good()) {
+        fastaReader.next(cur_contig);
+
+        uint8_t contigID = this->getIDFromContig(cur_contig.id_); //this is the id of the new contig
+        this->contigs.insert(std::make_pair(contigID,cur_contig.seq_));
+    }
+}
+
 void HDB::load_db_info(std::ifstream& stream){
     std::ios::sync_with_stdio(false);
     std::string line;
@@ -542,6 +555,8 @@ void HDB::load_db(std::string db_fname_base){
     }
     HDB::load_contig_info(contiginfo_fp);
     contiginfo_fp.close();
+
+    this->load_contigs(); // preload current contigs into memory for efficient lookup
 }
 
 int HDB::getKmerLen() {
