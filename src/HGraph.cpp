@@ -761,6 +761,7 @@ void HGraph::enforce_dfs_constraints(){
             min_len = std::min_element(std::begin(lens),std::end(lens));
             max_len = std::max_element(std::begin(lens),std::end(lens));
             if(*min_len < 89 && *max_len < 89){
+                std::cerr<<"removing"<<std::endl;
 //                this->remove_vertices(cur_vertices);
             }
         }
@@ -784,7 +785,7 @@ void HGraph::parse_vertices(){
 
     // shortest_path(); // TODO: see if needed at all - might be useful for the longest path traversal
 
-//    enforce_dfs_constraints();
+    enforce_dfs_constraints();
 }
 
 // This function selects the best possible combination of donor-acceptor sites
@@ -897,6 +898,12 @@ void HGraph::parse_graph() {
 
         remove_overlapping_edges(sjs_map); // TODO: currently introduces false negatives - needs work
 
+        // TODO: the edges need to be removed from the graph so that the to_sam function is not confused
+
+        // since removing an edge involves a modification to the vertex object (length and end)
+        // and VCoords objects in the VMap are declared const as keys to the map
+        // we can remove them from the map temporarily - create a new VCoords object with modified length and end and put it back into the graph
+
         for(auto eit2 : sjs_map) {
             // TODO: need to remove the old edge and include the new edges in the main graph here
             //      so that upon the next edge evaluation everything is correctly accounted for.
@@ -914,11 +921,46 @@ void HGraph::generate_sam_header(std::ofstream& sam_fp,std::string& cl){ // gene
     sam_fp << "@PG\tID:hairpin\tPN:hairpin\tVN:1.0\tCL:\"" << cl << "\"" << std::endl;
 }
 
+// computes over both explicit and implicit edges in the graph
+// return an iterator to the one element that follow the sequence observed
+void HGraph::_helper_tay_dfs(std::map<VCoords,Vertex>::iterator cur_vit, std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp>& visited){
+
+    // there is a few differences that must be introduced here to make the DFS work correctly
+
+    // first need to use implicit edges
+
+    // secondly, weights need to be taken into account here so that multiple copies of the same transcript are premitted
+
+
+    visited.insert(cur_vit); // mark the current vertex as visited
+
+    // iterate over all explicit edges
+    for (auto eit : cur_vit->second.getOutEdges()){
+        // if the vertex at the other end of the edge is not in visited
+        if(visited.find(eit.first) == visited.end()){ // element did not previously exist
+            visited.insert(eit.first);
+            this->_helper_tay_dfs(eit.first,visited);
+        }
+    }
+}
+
+// This function runs a depth first search algorithm to find all potential transcripts currently contaned in the graph after all the revisions
+void HGraph::tay_dfs(std::map<VCoords,Vertex>::iterator cur_vit, std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp>& visited){
+    _helper_tay_dfs(cur_vit,visited);
+}
+
 // this function takes the parsed graph and output the SAM-formatted file for further analysis
 void HGraph::to_sam(std::string& cl) {
     std::string sam_fname(this->out_fname);
     sam_fname.append(".sam");
     std::ofstream sam_fp(sam_fname.c_str());
+
+    // first identify the maximum sequence of points using a bfs
+
+    // secondly use a dfs on the sequence in order to identify sequences within a given cluster - why use a BFS first then? - only to find the next iterator after the bfs
+
+    // we can write the sam output as a depth first search that takes overlaps (implicit edges) into account as well
+
 
     this->generate_sam_header(sam_fp,cl);
 

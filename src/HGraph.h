@@ -279,6 +279,9 @@ public:
 
     void add_edge(std::map<VCoords,Vertex>::iterator vit1,std::map<VCoords,Vertex>::iterator vit2);
 
+    void _helper_tay_dfs(std::map<VCoords,Vertex>::iterator cur_vit, std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp>& visited);
+    void tay_dfs(std::map<VCoords,Vertex>::iterator cur_vit, std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp>& visited);
+
     void to_sam(std::string& cl);
     void sort_graph();
     void parse_graph();
