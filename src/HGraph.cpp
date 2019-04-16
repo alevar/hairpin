@@ -30,6 +30,13 @@ void HGraph::add_edge(std::map<VCoords,Vertex>::iterator prev,std::map<VCoords,V
 
     // now add to the main cluster
     this->emap_it=this->emap.insert(std::make_pair(std::make_pair(prev,next),Aggregate_edge_props(prev,next)));
+    if (!this->emap_it.second){
+        // should the edge props be modified in case the pair was not inserted?
+        if (!this->emap_it.first->second._exists_pair(prev,next)){ // check that the pair does not already exist
+            this->emap_it.first->second.addNext(next);
+            this->emap_it.first->second.addPrev(prev);
+        }
+    }
 }
 
 // TODO: need to account for reverse strand reads - for now need to make sure that simulations are with respect to the same strand
@@ -515,20 +522,75 @@ void add_bases_to_set(int start, int end, std::set<int>& cb){
     }
 }
 
+void HGraph::testEdge(std::map<Edge,Aggregate_edge_props,edge_cmp>::iterator eit){
+    bool prevb = false,nextb = false;
+    for (const auto& pit : eit->second.getPrevs()){
+        if(!this->vertices._exists(pit)){
+            prevb=true;
+        }
+    }
+    for (const auto& nit : eit->second.getNexts()){
+        if(!this->vertices._exists(nit)){
+            nextb=true;
+        }
+    }
+    if (prevb){
+        std::cerr<<"prev not found"<<std::endl;
+    }
+    if (nextb){
+        std::cerr<<"next not found"<<std::endl;
+    }
+}
+
+void HGraph::testAllEdges(){
+    bool prevb = false,nextb = false;
+    for (const auto& eit : this->emap){
+        for (const auto& pit : eit.second.getPrevs()){
+            if(!this->vertices._exists(pit)){
+                prevb=true;
+            }
+        }
+        for (const auto& nit : eit.second.getNexts()){
+            if(!this->vertices._exists(nit)){
+                nextb=true;
+            }
+        }
+    }
+    if (prevb){
+        std::cerr<<"prev not found"<<std::endl;
+    }
+    if (nextb){
+        std::cerr<<"next not found"<<std::endl;
+    }
+}
+
 void HGraph::remove_vertex(std::map<VCoords,Vertex>::iterator vit){
+//    testAllEdges();
+
     std::map<Edge,Aggregate_edge_props,edge_cmp>::iterator cur_emap_it;
     for (auto eit : vit->second.getInEdges()){ // for all incoming edges
         // first find iterator to the edge
         cur_emap_it = this->emap.find(std::make_pair(eit.first,vit));
         if (cur_emap_it != this->emap.end()) {
             // now we need to remove this pair of vertices from the edge
+//            std::cerr<<"before"<<std::endl;
+//            testEdge(cur_emap_it);
             cur_emap_it->second.remove_vertex_pair(eit.first, vit);
+//            testEdge(cur_emap_it);
+//            std::cerr<<"after"<<std::endl;
 
             if (cur_emap_it->second.isInEmpty() && cur_emap_it->second.isOutEmpty()){
                 this->emap.erase(cur_emap_it); // remove the edge all together
+//                if (this->emap.find(cur_emap_it->first) != this->emap.end()){
+//                    std::cerr<<"edge still found - in"<<std::endl;
+//                }
             }
         }
+        else{
+            std::cerr<<"WRONG!"<<std::endl;
+        }
         eit.first->second.remove_out_edge(vit); // now need to remove the association from the previous vertex
+        vit->second.remove_in_edge(eit.first);
     }
     for (auto eit : vit->second.getOutEdges()){ // for all outgoing edges
         // first find iterator to the edge
@@ -539,10 +601,19 @@ void HGraph::remove_vertex(std::map<VCoords,Vertex>::iterator vit){
 
             if (cur_emap_it->second.isInEmpty() && cur_emap_it->second.isOutEmpty()){
                 this->emap.erase(cur_emap_it); // remove the edge all together
+//                if (this->emap.find(cur_emap_it->first) != this->emap.end()){
+//                    std::cerr<<"edge still found - out"<<std::endl;
+//                }
             }
         }
+        else{
+            std::cerr<<"WRONG!"<<std::endl;
+        }
         eit.first->second.remove_in_edge(vit);
+        vit->second.remove_out_edge(eit.first);
     }
+    // need to also check whether the vertex serves as a key to any edge
+    // if it does - it should not be removed unless the edge is also been removed
     this->vertices.remove_vt(vit); // now need to remove the actual vertex
 }
 
@@ -673,8 +744,9 @@ void HGraph::shortest_path(){
 
     auto cur_vit = this->vertices.begin();
     std::map<VCoords,Vertex>::iterator next_vit;
-
+    int counter=0;
     while (true){
+//        std::cerr<<counter<<std::endl;
         if (cur_vit->second.getInDegree() == 0){ // check that the has no incoming edges
             this->topological_sort_explicit(cur_vit,cur_vertices,stack); // topologically sort the vertices returned by BFS
 
@@ -727,13 +799,14 @@ void HGraph::_helper_taylor_dfs_explicit(std::map<VCoords,Vertex>::iterator cur_
     if (cur_vit->second.getOutEdges().empty()){ // found an end
         lens.emplace_back(cur_len+(int)cur_vit->first.getLength());
     }
-
-    // iterate over all explicit edges
-    for (auto eit : cur_vit->second.getOutEdges()){
-        // if the vertex at the other end of the edge is not in visited
-        if(visited.find(eit.first) == visited.end()){ // element did not previously exist
-            visited.insert(eit.first);
-            this->_helper_taylor_dfs_explicit(eit.first,visited,lens,cur_len+(int)cur_vit->first.getLength());
+    else{
+        // iterate over all explicit edges
+        for (auto eit : cur_vit->second.getOutEdges()){
+            // if the vertex at the other end of the edge is not in visited
+            if(visited.find(eit.first) == visited.end()){ // element did not previously exist
+                visited.insert(eit.first);
+                this->_helper_taylor_dfs_explicit(eit.first,visited,lens,cur_len+(int)cur_vit->first.getLength());
+            }
         }
     }
 }
@@ -746,30 +819,140 @@ void HGraph::taylor_dfs_explicit(std::map<VCoords,Vertex>::iterator cur_vit, std
     _helper_taylor_dfs_explicit(cur_vit,visited,lens,0);
 }
 
+void HGraph::remove_vertex_dfs(std::map<VCoords,Vertex>::iterator vit){
+//    testAllEdges();
+
+    std::vector<bool> edge_key_removed;
+    bool isKey,removed;
+
+    std::map<Edge,Aggregate_edge_props,edge_cmp>::iterator cur_emap_it;
+    for (auto eit : vit->second.getInEdges()){ // for all incoming edges
+        isKey = false;
+        removed = false;
+        // first find iterator to the edge
+        cur_emap_it = this->emap.find(std::make_pair(eit.first,vit));
+        if (cur_emap_it != this->emap.end()) {
+            if (vit->first == cur_emap_it->first.first->first){ // if the current vertex serves as a key to the edge in which it participates
+                isKey = true;
+            }
+            // now we need to remove this pair of vertices from the edge
+//            std::cerr<<"before"<<std::endl;
+//            testEdge(cur_emap_it);
+            cur_emap_it->second.remove_vertex_pair(eit.first, vit);
+//            testEdge(cur_emap_it);
+//            std::cerr<<"after"<<std::endl;
+
+            if (cur_emap_it->second.isInEmpty() && cur_emap_it->second.isOutEmpty()){
+                this->emap.erase(cur_emap_it); // remove the edge all together
+                if (isKey){
+                    edge_key_removed.emplace_back(true);
+                    removed = true;
+                }
+//                if (this->emap.find(cur_emap_it->first) != this->emap.end()){
+//                    std::cerr<<"edge still found - in"<<std::endl;
+//                }
+            }
+            if (isKey && !removed){
+                edge_key_removed.emplace_back(false);
+            }
+        }
+        else{
+            std::cerr<<"WRONG!"<<std::endl;
+        }
+        eit.first->second.remove_out_edge(vit); // now need to remove the association from the previous vertex
+        vit->second.remove_in_edge(eit.first);
+    }
+    for (auto eit : vit->second.getOutEdges()){ // for all outgoing edges
+        isKey = false;
+        removed = false;
+        // first find iterator to the edge
+        cur_emap_it = this->emap.find(std::make_pair(vit,eit.first));
+        // now we need to remove this pair of vertices from the edge
+        if (cur_emap_it != this->emap.end()) {
+            if (vit->first == cur_emap_it->first.first->first){ // if the current vertex serves as a key to the edge in which it participates
+                isKey = true;
+            }
+            cur_emap_it->second.remove_vertex_pair(vit,eit.first);
+
+            if (cur_emap_it->second.isInEmpty() && cur_emap_it->second.isOutEmpty()){
+                this->emap.erase(cur_emap_it); // remove the edge all together
+                if (isKey){
+                    edge_key_removed.emplace_back(true);
+                    removed = true;
+                }
+//                if (this->emap.find(cur_emap_it->first) != this->emap.end()){
+//                    std::cerr<<"edge still found - out"<<std::endl;
+//                }
+            }
+            if (isKey && !removed){
+                edge_key_removed.emplace_back(false);
+            }
+        }
+        else{
+            std::cerr<<"WRONG!"<<std::endl;
+        }
+        eit.first->second.remove_in_edge(vit);
+        vit->second.remove_out_edge(eit.first);
+    }
+    // need to also check whether the vertex serves as a key to any edge
+    // if it does - it should not be removed unless the edge is also been removed
+    // basically if either all are false or all are true
+    bool removeCurVIT = true;
+    for (bool er : edge_key_removed){
+        if(!er){
+            removeCurVIT = false;
+            break;
+        }
+    }
+    if (removeCurVIT){
+        this->vertices.remove_vt(vit); // now need to remove the actual vertex
+    }
+}
+
 // This function runs DFS variants and checks DFS-specific constraints
 void HGraph::enforce_dfs_constraints(){
     std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp> cur_vertices;
     std::vector<int> lens;
     __gnu_cxx::__normal_iterator<int *, std::vector<int, std::allocator<int>>> min_len,max_len;
 
-    auto cur_vit = this->vertices.begin();
-    std::map<VCoords,Vertex>::iterator next_vit;
+    std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp> all_vertices;
 
+    auto cur_vit = this->vertices.begin();
+    std::map<VCoords,Vertex>::iterator next_vit,to_remove_it;
+    int counter=0;
     while (true){
+        counter++;
+//        std::cerr<<counter<<std::endl;
         if (cur_vit->second.getInDegree()==0){ // makes sure that dfs is initiated only at the first vertex created by a read in a given locus
             this->taylor_dfs_explicit(cur_vit,cur_vertices,lens);
+//            std::cerr<<"dfs"<<std::endl;
             min_len = std::min_element(std::begin(lens),std::end(lens));
             max_len = std::max_element(std::begin(lens),std::end(lens));
-            if(*min_len < 89 && *max_len < 89){
-                std::cerr<<"removing"<<std::endl;
+            if(*min_len < 150 && *max_len < 150){
+//                if (!cur_vit->second.getOutEdges().empty()) {
+//                    std::cerr << "removing" << std::endl;
+//                }
+                cur_vit++;
+                this->remove_vertex_dfs(*cur_vertices.begin());
 //                this->remove_vertices(cur_vertices);
+//                all_vertices.insert(cur_vertices.begin(), cur_vertices.end());
+//                while(true){
+//                    if(all_vertices.find(cur_vit)==all_vertices.end() || cur_vit == this->vertices.end()){ // current vertex has not been removed
+//                        break;
+//                    }
+//                    cur_vit++;
+//                }
             }
+            else{
+                cur_vit++;
+            }
+        }
+        else{
+            cur_vit++;
         }
         lens.clear();
 
         cur_vertices.clear();
-
-        cur_vit++;
 
         if (cur_vit == this->vertices.end()){
             break;
@@ -909,7 +1092,7 @@ void HGraph::parse_graph() {
             //      so that upon the next edge evaluation everything is correctly accounted for.
             edges_fp << this->hdb->getContigFromID(eit.second.getChr()) << "\t" << "hairpin" << "\t" << "intron" << "\t"
                      << std::get<2>(eit2.first) << "\t" << std::get<3>(eit2.first) << "\t"
-                     << "." << "\t" << eit.second.getStrand() << "\t" << "." << "\t" << "weight=" << eit.second.getWeight() << std::endl;
+                     << "." << "\t" << eit.second.getStrand() << "\t" << "." << "\t" << "weight=" <<  std::endl;
         }
     }
     edges_fp.close();

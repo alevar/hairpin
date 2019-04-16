@@ -157,10 +157,16 @@ public:
 
     void remove_out_edge(std::map<VCoords,Vertex>::iterator vit){
         auto emap_it_found = this->outEdges.find(vit);
+//        if (emap_it_found == this->outEdges.end()){
+//            std::cerr<<"out edge not found"<<std::endl;
+//        }
         this->outEdges.erase(emap_it_found);
     }
     void remove_in_edge(std::map<VCoords,Vertex>::iterator vit){
         auto emap_it_found = this->inEdges.find(vit);
+//        if (emap_it_found == this->inEdges.end()){
+//            std::cerr<<"in edge not found"<<std::endl;
+//        }
         this->inEdges.erase(emap_it_found);
     }
 
@@ -206,7 +212,20 @@ public:
 
     void remove_vt(std::map<VCoords,Vertex>::iterator vit){
         VCoords searching_vit = vit->first;
+//        if (this->vertices.find(vit->first) == this->vertices.end()){
+//            std::cerr<<"'VCoords not found"<<std::endl;
+//        }
+        // let's do a check in the out and in edges here as well
+//        if (!vit->second.getOutEdges().empty()){
+//            std::cerr<<"something's wrong out"<<std::endl;
+//        }
+//        if (!vit->second.getInEdges().empty()){
+//            std::cerr<<"something's wrong in"<<std::endl;
+//        }
         this->vertices.erase(vit);
+//        if (this->vertices.find(vit->first) != this->vertices.end()){
+//            std::cerr<<"the vertex was not removed"<<std::endl;
+//        }
     }
 
 private:
@@ -249,9 +268,27 @@ public:
     std::vector<std::map<VCoords,Vertex>::iterator> getNexts() const {return this->nexts;}
     std::vector<std::map<VCoords,Vertex>::iterator> getPrevs() const {return this->prevs;}
 
+    bool _exists_pair(std::map<VCoords,Vertex>::iterator prev,std::map<VCoords,Vertex>::iterator next){
+        auto nit = std::find(this->nexts.begin(),this->nexts.end(),next);
+        auto pit = std::find(this->prevs.begin(),this->prevs.end(),prev);
+        if (nit != this->nexts.end() && pit != this->prevs.end()) { // pair exists
+            return true;
+        }
+        return false;
+    }
+
     void remove_vertex_pair(std::map<VCoords,Vertex>::iterator prev, std::map<VCoords,Vertex>::iterator next){
-        auto nit = this->nexts.erase(std::remove(this->nexts.begin(), this->nexts.end(), next), this->nexts.end());
-        auto pit = this->prevs.erase(std::remove(this->prevs.begin(), this->prevs.end(), prev), this->prevs.end());
+        auto nit = std::find(this->nexts.begin(),this->nexts.end(),next);
+        if (nit != this->nexts.end()) {
+            this->nexts.erase(nit);
+        }
+        auto pit = std::find(this->prevs.begin(),this->prevs.end(),prev);
+        if (pit != this->prevs.end()){
+            this->prevs.erase(pit);
+        }
+
+//        auto nit = this->nexts.erase(std::remove(this->nexts.begin(), this->nexts.end(), next), this->nexts.end());
+//        auto pit = this->prevs.erase(std::remove(this->prevs.begin(), this->prevs.end(), prev), this->prevs.end());
     }
     int getOutSize(){return this->nexts.size();} // return the number of incoming vertices
     int getInSize(){return this->prevs.size();} // return the number of outgoing vertices
@@ -382,6 +419,7 @@ private:
     void shortest_path();
 
     void remove_vertex(std::map<VCoords,Vertex>::iterator vit);
+    void remove_vertex_dfs(std::map<VCoords,Vertex>::iterator vit);
     void remove_vertices(std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp>& vts);
     void enforce_bfs_constraints();
     void enforce_dfs_constraints();
@@ -418,6 +456,9 @@ private:
     uint8_t getEdgeEnd(const std::pair<Edge,Aggregate_edge_props>& eit);
 
     void make_dot();
+
+    void testAllEdges();
+    void testEdge(std::map<Edge,Aggregate_edge_props,edge_cmp>::iterator eit);
 
 };
 
