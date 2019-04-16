@@ -832,7 +832,7 @@ void HGraph::remove_vertex_dfs(std::map<VCoords,Vertex>::iterator vit){
         // first find iterator to the edge
         cur_emap_it = this->emap.find(std::make_pair(eit.first,vit));
         if (cur_emap_it != this->emap.end()) {
-            if (vit->first == cur_emap_it->first.first->first){ // if the current vertex serves as a key to the edge in which it participates
+            if (vit->first == cur_emap_it->first.second->first){ // if the current vertex serves as a key to the edge in which it participates
                 isKey = true;
             }
             // now we need to remove this pair of vertices from the edge
@@ -857,7 +857,7 @@ void HGraph::remove_vertex_dfs(std::map<VCoords,Vertex>::iterator vit){
             }
         }
         else{
-            std::cerr<<"WRONG!"<<std::endl;
+            std::cerr<<"WRONG IN!"<<std::endl;
         }
         eit.first->second.remove_out_edge(vit); // now need to remove the association from the previous vertex
         vit->second.remove_in_edge(eit.first);
@@ -889,7 +889,7 @@ void HGraph::remove_vertex_dfs(std::map<VCoords,Vertex>::iterator vit){
             }
         }
         else{
-            std::cerr<<"WRONG!"<<std::endl;
+            std::cerr<<"WRONG OUT!"<<std::endl;
         }
         eit.first->second.remove_in_edge(vit);
         vit->second.remove_out_edge(eit.first);

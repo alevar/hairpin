@@ -61,6 +61,7 @@ public:
         return (this->chrID > vc.chrID || this->strand > vc.strand || this->pos >  vc.pos || this->getEnd() > vc.getEnd());
     }
     bool operator==(const VCoords& vc) const{
+        return std::tie(this->chrID,this->strand,this->pos,this->length) == std::tie(vc.chrID,vc.strand,vc.pos,vc.length);
         return (this->chrID == vc.chrID && this->strand == vc.strand && this->pos ==  vc.pos && this->length == vc.length);
     }
 
