@@ -244,9 +244,8 @@ public:
 
     void setKnown(){this->known=true;} // set the current edge as known/annotated
     bool isKnown(){return this->known;} // is the current edge known/annotated
-    void validate(){
-        this->valid=true;
-    } // for an unknown edge - modify the edge and the vertices to the inferred ones; refine coordinates and set the validation flag
+    void validate(){ this->valid=true;} // for an unknown edge - modify the edge and the vertices to the inferred ones; refine coordinates and set the validation flag
+    bool isValid(){return this->valid;}
     int getWeight() const {
         int total=0;
         for(auto vt : this->nexts){ // there is a problem here - we can not go to the exact edge in the vertex which is needed to compute the weight of a given edge
@@ -336,6 +335,7 @@ private:
 
     typedef std::map<VCoords,Vertex>::iterator VIT;
     typedef std::pair<VIT,VIT> Edge;
+
     struct edge_cmp { // the comparator in this case simply compares if the splice site coordinates are identical
         bool operator()(const Edge& prev, const Edge& next) const {
             uint32_t prev_end = prev.first->first.getEnd(), next_end = next.first->first.getEnd();
@@ -401,9 +401,9 @@ private:
     typedef std::tuple<uint8_t,uint8_t,uint32_t,uint32_t> SJ; // defines the type of a splice junction
     struct sjs_cmp { // Comparator for the SJS map
         bool operator()(const SJ& prev, const SJ& next) const {
-//            return std::tie(std::get<0>(prev),std::get<1>(prev),std::get<2>(prev),std::get<3>(prev)) < std::tie(std::get<0>(next),std::get<1>(next),std::get<2>(next),std::get<3>(next));
-            return std::get<0>(prev) < std::get<0>(next) || std::get<1>(prev) < std::get<1>(next) ||
-                   std::get<2>(prev) < std::get<2>(next) || std::get<3>(prev) < std::get<3>(next);
+            return std::tie(std::get<0>(prev),std::get<1>(prev),std::get<2>(prev),std::get<3>(prev)) < std::tie(std::get<0>(next),std::get<1>(next),std::get<2>(next),std::get<3>(next));
+//            return std::get<0>(prev) < std::get<0>(next) || std::get<1>(prev) < std::get<1>(next) ||
+//                   std::get<2>(prev) < std::get<2>(next) || std::get<3>(prev) < std::get<3>(next);
         }
     };
 
@@ -432,7 +432,7 @@ private:
 
     typedef std::map<SJ,std::tuple<double,double>,sjs_cmp> SJS; // defines a type for a map of splice junctions
 
-    void edit_graph(const std::pair<Edge,Aggregate_edge_props>& eit, SJS& sm);
+    void edit_graph(std::map<Edge,Aggregate_edge_props>::iterator&, SJS& sm);
 
     void evaluate_sj(const std::pair<Edge,Aggregate_edge_props>& eit,const std::pair<std::string,double>& donor,const std::pair<std::string,double>& acceptor,SJS& sjs, std::string& sub_seq);
 
@@ -466,6 +466,10 @@ private:
     void testEdge(std::map<Edge,Aggregate_edge_props,edge_cmp>::iterator eit);
 
     void remove_pseudogenes();
+
+    void remove_edge(const std::pair<Edge,Aggregate_edge_props>& eit);
+
+    bool edge_less(const Edge& prev, const Edge& next);
 
 };
 

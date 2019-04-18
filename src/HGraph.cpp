@@ -29,7 +29,9 @@ void HGraph::add_edge(std::map<VCoords,Vertex>::iterator prev,std::map<VCoords,V
     this->stats.numEdges = this->stats.numEdges + edge_inc; // increment the number of edges
 
     // now add to the main cluster
-    this->emap_it=this->emap.insert(std::make_pair(std::make_pair(prev,next),Aggregate_edge_props(prev,next)));
+    std::pair<std::map<Edge,Aggregate_edge_props,edge_cmp>::iterator,bool> new_eit;
+    new_eit=this->emap.insert(std::make_pair(std::make_pair(prev,next),Aggregate_edge_props(prev,next)));
+    this->emap_it = new_eit;
     if (!this->emap_it.second){
         // should the edge props be modified in case the pair was not inserted?
         if (!this->emap_it.first->second._exists_pair(prev,next)){ // check that the pair does not already exist
@@ -175,7 +177,7 @@ void HGraph::add_read(std::string &read) {
                 dist <= this->maxIntron && // is not backward and is not greater than the maximum intron length; no minum threshold to permit edges to form for errors
                 kmerDist <= this->stats.kmerlen &&
                 kmerDist >= this->stats.kmerlen/2){ // follows the expected number of missed kmers; the division by two here is due to the fact that an overhang can not be in the second half, since otherwise there would not be enough space on the receiving end
-                    this->add_edge(ci1->first,ci2->first); // form an edge
+                this->add_edge(ci1->first,ci2->first); // form an edge
             }
         }
     }
@@ -252,113 +254,6 @@ void HGraph::write_intron_gff() {
 //      intron length threshold is given the precedence by asigning the highest value and the rest are weighted with respect to this shortest length
 //   afterwards, when all the individual scores are computed, we can put them through a series of sigmoid function with cutoffs
 //      and then be able to chose the optimal alignment
-
-uint8_t HGraph::getEdgeChr(const std::pair<Edge,Aggregate_edge_props>& eit){
-    return eit.second.getChr();
-}
-
-uint8_t HGraph::getEdgeStrand(const std::pair<HGraph::Edge, Aggregate_edge_props> &eit) {
-    return eit.second.getStrand();
-}
-
-uint8_t HGraph::getEdgeStart(const std::pair<HGraph::Edge, Aggregate_edge_props> &eit) {
-    return eit.second.getStart();
-}
-
-uint8_t HGraph::getEdgeEnd(const std::pair<HGraph::Edge, Aggregate_edge_props> &eit) {
-    return eit.second.getEnd();
-}
-
-// this function identifies all possible precise splice junctions given one potential splice junction (edge)
-// the evaluation is based entirely on the donor/acceptor pairs
-void HGraph::evaluate_sj(const std::pair<Edge,Aggregate_edge_props>& eit,const std::pair<std::string,double>& donor,const std::pair<std::string,double>& acceptor, SJS& sj_map, std::string& sub_seq){
-    std::string start_seq, end_seq;
-    start_seq = sub_seq.substr(0,this->stats.kmerlen); // get sequence for the potential start of the splice junction
-    std::transform(start_seq.begin(), start_seq.end(), start_seq.begin(), ::toupper);
-    end_seq = sub_seq.substr(sub_seq.length()-(this->stats.kmerlen),this->stats.kmerlen); // get sequence for the potential end of the splice junction
-    std::transform(end_seq.begin(), end_seq.end(), end_seq.begin(), ::toupper);
-
-    std::map<int,std::string> starts,ends; // holds positions and other information from donor and acceptor sites
-
-    size_t pos = start_seq.find(donor.first, 0); // find canonical donor on the donor site
-    while(pos != std::string::npos){
-        starts.insert(std::make_pair(pos,start_seq.substr(pos,start_seq.length()-pos-2)));
-        pos = start_seq.find(donor.first,pos+1);
-    }
-
-    pos = end_seq.find(acceptor.first, 0); // find canonical acceptor on the acceptor site
-    while(pos != std::string::npos){
-        ends.insert(std::make_pair(pos,end_seq.substr(pos+2,end_seq.length()-pos)));
-        pos = end_seq.find(acceptor.first,pos+1);
-    }
-
-    for (const auto& start_it : starts){ // now figure out which one is the true junction
-        for (const auto& end_it : ends){
-
-            int numBases_after_donor=(start_seq.length()-2)-start_it.first;
-            int numBases_before_acceptor=end_it.first;
-
-            if (start_it.first - numBases_before_acceptor >= 0 &&
-                end_it.first + numBases_before_acceptor <= this->stats.kmerlen){ // possible now compare the actual strings
-
-                std::string donor_overhang=start_seq.substr(start_it.first,numBases_after_donor);
-                std::string acceptor_overhang=end_seq.substr((end_it.first+2)-numBases_before_acceptor,numBases_before_acceptor);
-
-                std::string donor_overhang_on_acceptor=end_seq.substr(end_it.first+2,numBases_after_donor);
-                std::string acceptor_overhang_on_donor=start_seq.substr(start_it.first-numBases_before_acceptor,numBases_before_acceptor);
-
-                if (donor_overhang_on_acceptor == donor_overhang && acceptor_overhang_on_donor == acceptor_overhang){
-                    sj_map.insert(std::make_pair(std::make_tuple(getEdgeChr(eit),
-                                                                 getEdgeStrand(eit),
-                                                                 eit.second.getStart() - numBases_after_donor,
-                                                                 eit.second.getEnd()+1 + numBases_before_acceptor),
-                                                 std::make_tuple(donor.second,acceptor.second)));
-                    // TODO: refine the edge and vertces
-                    //   create new vertices and edge
-                    //   remove the old ones
-                }
-                else{
-                    // TODO: remove this edge if none of the sjs have been refined
-                }
-            }
-        }
-    }
-}
-
-// This function edits the graph based on the "raw" edge and the "parsed" edges
-void HGraph::edit_graph(const std::pair<Edge,Aggregate_edge_props>& eit, SJS& sm){
-
-}
-
-// this function runs splice junction verification for all donor/acceptor pairs
-void HGraph::evaluate_donor_acceptor(const std::pair<Edge,Aggregate_edge_props>& eit, SJS& sm){
-    std::string sub_seq;
-    this->getGenomeSubstr(eit.first,this->stats.kmerlen-2,sub_seq); // first get fasta sequence
-    for (const auto& dit : this->donors) { // iterate over all the donors
-        for (const auto& ait : this->acceptors) { // iterate over all acceptors
-            evaluate_sj(eit,dit,ait,sm,sub_seq);
-        }
-    }
-
-    // TODO: need to refine edges here
-    //    by removing any edges that do not pass constraints
-}
-
-// given all precise splice junctions this function enforces any specified constraints
-// currently supports only the minimum and the maximum intron lengths
-// but can be extended to deal with more if needed
-void HGraph::enforce_constraints(SJS& sm){
-    int length = 0;
-    for (auto sm_it = sm.cbegin(); sm_it != sm.cend();){
-        length = std::get<3>(sm_it->first) - std::get<2>(sm_it->first);
-        if (length < this->minIntron || length > this->maxIntron){
-            sm_it = sm.erase(sm_it);
-        }
-        else{
-            ++sm_it;
-        }
-    }
-}
 
 // This function computes the number of bases in some exon. taking into account implicit edges (overlaps in vertex coordinates)
 // computes untill no vertex overlaps are found
@@ -1060,6 +955,161 @@ void HGraph::make_dot(){
     dot_fp.close();
 }
 
+void HGraph::remove_edge(const std::pair<Edge,Aggregate_edge_props>& eit){
+    // first remove edge from the associated vertices
+    for (auto& prev : eit.second.getPrevs()){
+        for (auto& next : eit.second.getNexts()){
+            // find a pair of vertices and remove them
+            for (auto pn : prev->second.getOutEdges()){
+                for (auto np : next->second.getInEdges()){
+                    if (pn.first == next && np.first == prev){
+                        prev->second.remove_out_edge(next);
+                        next->second.remove_in_edge(prev);
+                    }
+                }
+            }
+        }
+    }
+}
+
+uint8_t HGraph::getEdgeChr(const std::pair<Edge,Aggregate_edge_props>& eit){
+    return eit.second.getChr();
+}
+
+uint8_t HGraph::getEdgeStrand(const std::pair<HGraph::Edge, Aggregate_edge_props> &eit) {
+    return eit.second.getStrand();
+}
+
+uint8_t HGraph::getEdgeStart(const std::pair<HGraph::Edge, Aggregate_edge_props> &eit) {
+    return eit.second.getStart();
+}
+
+uint8_t HGraph::getEdgeEnd(const std::pair<HGraph::Edge, Aggregate_edge_props> &eit) {
+    return eit.second.getEnd();
+}
+
+// this function identifies all possible precise splice junctions given one potential splice junction (edge)
+// the evaluation is based entirely on the donor/acceptor pairs
+void HGraph::evaluate_sj(const std::pair<Edge,Aggregate_edge_props>& eit,const std::pair<std::string,double>& donor,const std::pair<std::string,double>& acceptor, SJS& sj_map, std::string& sub_seq){
+    std::string start_seq, end_seq;
+    start_seq = sub_seq.substr(0,this->stats.kmerlen); // get sequence for the potential start of the splice junction
+    std::transform(start_seq.begin(), start_seq.end(), start_seq.begin(), ::toupper);
+    end_seq = sub_seq.substr(sub_seq.length()-(this->stats.kmerlen),this->stats.kmerlen); // get sequence for the potential end of the splice junction
+    std::transform(end_seq.begin(), end_seq.end(), end_seq.begin(), ::toupper);
+
+    std::map<int,std::string> starts,ends; // holds positions and other information from donor and acceptor sites
+
+    size_t pos = start_seq.find(donor.first, 0); // find canonical donor on the donor site
+    while(pos != std::string::npos){
+        starts.insert(std::make_pair(pos,start_seq.substr(pos,start_seq.length()-pos-2)));
+        pos = start_seq.find(donor.first,pos+1);
+    }
+
+    pos = end_seq.find(acceptor.first, 0); // find canonical acceptor on the acceptor site
+    while(pos != std::string::npos){
+        ends.insert(std::make_pair(pos,end_seq.substr(pos+2,end_seq.length()-pos)));
+        pos = end_seq.find(acceptor.first,pos+1);
+    }
+
+    for (const auto& start_it : starts){ // now figure out which one is the true junction
+        for (const auto& end_it : ends){
+
+            int numBases_after_donor=(start_seq.length()-2)-start_it.first;
+            int numBases_before_acceptor=end_it.first;
+
+            if (start_it.first - numBases_before_acceptor >= 0 &&
+                end_it.first + numBases_before_acceptor <= this->stats.kmerlen){ // possible now compare the actual strings
+
+                std::string donor_overhang=start_seq.substr(start_it.first,numBases_after_donor);
+                std::string acceptor_overhang=end_seq.substr((end_it.first+2)-numBases_before_acceptor,numBases_before_acceptor);
+
+                std::string donor_overhang_on_acceptor=end_seq.substr(end_it.first+2,numBases_after_donor);
+                std::string acceptor_overhang_on_donor=start_seq.substr(start_it.first-numBases_before_acceptor,numBases_before_acceptor);
+
+                if (donor_overhang_on_acceptor == donor_overhang && acceptor_overhang_on_donor == acceptor_overhang){
+                    sj_map.insert(std::make_pair(std::make_tuple(getEdgeChr(eit),
+                                                                 getEdgeStrand(eit),
+                                                                 eit.second.getStart() - numBases_after_donor,
+                                                                 eit.second.getEnd()+1 + numBases_before_acceptor),
+                                                 std::make_tuple(donor.second,acceptor.second)));
+                }
+            }
+        }
+    }
+}
+
+// this function runs splice junction verification for all donor/acceptor pairs
+void HGraph::evaluate_donor_acceptor(const std::pair<Edge,Aggregate_edge_props>& eit, SJS& sm){
+    std::string sub_seq;
+    this->getGenomeSubstr(eit.first,this->stats.kmerlen-2,sub_seq); // first get fasta sequence
+    for (const auto& dit : this->donors) { // iterate over all the donors
+        for (const auto& ait : this->acceptors) { // iterate over all acceptors
+            evaluate_sj(eit,dit,ait,sm,sub_seq);
+        }
+    }
+
+    // TODO: need to refine edges here
+    //    by removing any edges that do not pass constraints
+}
+
+// given all precise splice junctions this function enforces any specified constraints
+// currently supports only the minimum and the maximum intron lengths
+// but can be extended to deal with more if needed
+void HGraph::enforce_constraints(SJS& sm){
+    int length = 0;
+    for (auto sm_it = sm.cbegin(); sm_it != sm.cend();){
+        length = std::get<3>(sm_it->first) - std::get<2>(sm_it->first);
+        if (length < this->minIntron || length > this->maxIntron){
+            sm_it = sm.erase(sm_it);
+        }
+        else{
+            ++sm_it;
+        }
+    }
+}
+
+bool HGraph::edge_less(const Edge& prev, const Edge& next){
+    uint32_t prev_end = prev.first->first.getEnd(), next_end = next.first->first.getEnd();
+    uint32_t prev_start = prev.second->first.getStart(), next_start = next.second->first.getStart();
+    return std::tie(prev_end,prev_start) < std::tie(next_end,next_start);
+}
+
+// This function edits the graph based on the "raw" edge and the "parsed" edges
+void HGraph::edit_graph(std::map<Edge,Aggregate_edge_props>::iterator& eit, SJS& sm){
+    // first create the base prev and next vertices from the original ones
+    SJS::iterator sm_it = sm.begin();
+    std::map<VCoords,Vertex>::iterator start_it,end_it;
+
+    start_it = this->add_vertex(eit->first.first->first.getChr(),
+                                     eit->first.first->first.getStrand(),
+                                     eit->first.first->first.getStart(),
+                                     std::get<3>(sm_it->first) - eit->first.first->first.getStart()); // add start vertex
+    end_it = this->add_vertex(eit->first.second->first.getChr(),
+                              eit->first.second->first.getStrand(),
+                              std::get<3>(sm_it->first),
+                              eit->first.second->first.getEnd()-(eit->first.second->first.getEnd()-std::get<3>(sm_it->first))); // add start vertex
+
+    this->add_edge(start_it,end_it); // form an edge
+
+    // the following needs to be done
+    // update all the vertex components
+
+    // now just need to modify all other prev and next vertices and attach them to the edge
+    for (auto& prev : eit->second.getPrevs()){
+        for (auto& next : eit->second.getNexts()){
+            // find a pair of vertices and remove them
+            for (auto pn : prev->second.getOutEdges()){
+                for (auto np : next->second.getInEdges()){
+                    if (pn.first == next && np.first == prev){
+                    }
+                }
+            }
+        }
+    }
+
+    this->emap_it.first->second.validate();
+}
+
 // parse graph and evaluate gaps and assign splice junctions and mismatches and gaps
 void HGraph::parse_graph() {
 
@@ -1077,22 +1127,45 @@ void HGraph::parse_graph() {
     edges_fname.append(".intron.parsed.gff");
     std::ofstream edges_fp(edges_fname.c_str());
 
-    int counter=0;
+    auto eit = this->emap.begin();
 
-    for(const auto& eit : this->emap){
+    for (;eit != this->emap.end();){
+        if (eit->second.isValid()){ // make sure the edge has not been previously validated
+            ++eit;
+            continue;
+        }
         SJS sjs_map;
-        evaluate_donor_acceptor(eit,sjs_map);
-        if (!sjs_map.empty()){
-            counter++;
+        evaluate_donor_acceptor(*eit,sjs_map);
+        if (sjs_map.empty()){
+            remove_edge(*eit);
+            auto eit_rem = this->emap.find(eit->first);
+            this->emap.erase(eit_rem);
+            ++eit;
+            continue;
         }
 
         enforce_constraints(sjs_map);
+        if (sjs_map.empty()){
+            remove_edge(*eit);
+            auto eit_rem = this->emap.find(eit->first);
+            this->emap.erase(eit_rem);
+            ++eit;
+            continue;
+        }
 //        enforce_read_length(eit,sjs_map); // TODO: currently does not quite work - introduces false negatives -  should revisit - can be done as a second vertex pass - needs to be implemented with dfs but without implicit edge evaluation
 //        enforce_unique_start_end(eit,sjs_map); // TODO: currently does not quite work - introduces false negatives - should revisit - instead needs to compute the distribution of starts and ends, and see if it falls within expected thresholds
 
-        remove_overlapping_edges(sjs_map); // TODO: currently introduces false negatives - needs work
+        remove_overlapping_edges(sjs_map);
+        if (sjs_map.empty()){
+            remove_edge(*eit);
+            auto eit_rem = this->emap.find(eit->first);
+            this->emap.erase(eit_rem);
+            ++eit;
+            continue;
+        }
 
-        // TODO: the edges need to be removed from the graph so that the to_sam function is not confused
+        // at this point we need to pass the sjs map and the eit to the edit_graph function
+        edit_graph(eit,sjs_map);
 
         // since removing an edge involves a modification to the vertex object (length and end)
         // and VCoords objects in the VMap are declared const as keys to the map
@@ -1101,10 +1174,12 @@ void HGraph::parse_graph() {
         for(auto eit2 : sjs_map) {
             // TODO: need to remove the old edge and include the new edges in the main graph here
             //      so that upon the next edge evaluation everything is correctly accounted for.
-            edges_fp << this->hdb->getContigFromID(eit.second.getChr()) << "\t" << "hairpin" << "\t" << "intron" << "\t"
+            edges_fp << this->hdb->getContigFromID(eit->second.getChr()) << "\t" << "hairpin" << "\t" << "intron" << "\t"
                      << std::get<2>(eit2.first) << "\t" << std::get<3>(eit2.first) << "\t"
-                     << "." << "\t" << eit.second.getStrand() << "\t" << "." << "\t" << "weight=" <<  std::endl;
+                     << "." << "\t" << eit->second.getStrand() << "\t" << "." << "\t" << "weight=" <<  std::endl;
         }
+
+        ++eit;
     }
     edges_fp.close();
 }
