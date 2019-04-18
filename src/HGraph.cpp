@@ -179,6 +179,10 @@ void HGraph::add_read(std::string &read) {
             }
         }
     }
+    // TODO: quite a bit of refinement can be done ere as well
+    //    for instance this is the place where we cn enforce not creating any vertices, that do not pass the next:
+    //    no short excerpts (smalles exon length)
+    //    total read length (minimum number of bases in a single read formation)
 }
 
 // print general statistics about the quantification process
@@ -274,9 +278,6 @@ void HGraph::evaluate_sj(const std::pair<Edge,Aggregate_edge_props>& eit,const s
     end_seq = sub_seq.substr(sub_seq.length()-(this->stats.kmerlen),this->stats.kmerlen); // get sequence for the potential end of the splice junction
     std::transform(end_seq.begin(), end_seq.end(), end_seq.begin(), ::toupper);
 
-//    std::cout<<start_seq<<std::endl;
-//    std::cout<<end_seq<<std::endl;
-
     std::map<int,std::string> starts,ends; // holds positions and other information from donor and acceptor sites
 
     size_t pos = start_seq.find(donor.first, 0); // find canonical donor on the donor site
@@ -312,10 +313,21 @@ void HGraph::evaluate_sj(const std::pair<Edge,Aggregate_edge_props>& eit,const s
                                                                  eit.second.getStart() - numBases_after_donor,
                                                                  eit.second.getEnd()+1 + numBases_before_acceptor),
                                                  std::make_tuple(donor.second,acceptor.second)));
+                    // TODO: refine the edge and vertces
+                    //   create new vertices and edge
+                    //   remove the old ones
+                }
+                else{
+                    // TODO: remove this edge if none of the sjs have been refined
                 }
             }
         }
     }
+}
+
+// This function edits the graph based on the "raw" edge and the "parsed" edges
+void HGraph::edit_graph(const std::pair<Edge,Aggregate_edge_props>& eit, SJS& sm){
+
 }
 
 // this function runs splice junction verification for all donor/acceptor pairs
@@ -327,6 +339,9 @@ void HGraph::evaluate_donor_acceptor(const std::pair<Edge,Aggregate_edge_props>&
             evaluate_sj(eit,dit,ait,sm,sub_seq);
         }
     }
+
+    // TODO: need to refine edges here
+    //    by removing any edges that do not pass constraints
 }
 
 // given all precise splice junctions this function enforces any specified constraints
@@ -502,11 +517,6 @@ void HGraph::enforce_unique_start_end(const std::pair<Edge,Aggregate_edge_props>
 
 }
 
-// This function edits the graph based on the "raw" edge and the "parsed" edges
-void HGraph::edit_graph(const std::pair<Edge,Aggregate_edge_props>& eit, SJS& sm){
-
-}
-
 // This function tests for an overlap between two vertices
 // this method only works in one direction where vit2 is greater than vit1
 bool HGraph::overlap(std::map<VCoords,Vertex>::iterator vit1,std::map<VCoords,Vertex>::iterator vit2){
@@ -565,7 +575,7 @@ void HGraph::testAllEdges(){
 }
 
 void HGraph::remove_vertex(std::map<VCoords,Vertex>::iterator vit){
-//    testAllEdges();
+    testAllEdges();
 
     std::map<Edge,Aggregate_edge_props,edge_cmp>::iterator cur_emap_it;
     for (auto eit : vit->second.getInEdges()){ // for all incoming edges
@@ -573,17 +583,17 @@ void HGraph::remove_vertex(std::map<VCoords,Vertex>::iterator vit){
         cur_emap_it = this->emap.find(std::make_pair(eit.first,vit));
         if (cur_emap_it != this->emap.end()) {
             // now we need to remove this pair of vertices from the edge
-//            std::cerr<<"before"<<std::endl;
-//            testEdge(cur_emap_it);
+            std::cerr<<"before in"<<std::endl;
+            testEdge(cur_emap_it);
             cur_emap_it->second.remove_vertex_pair(eit.first, vit);
-//            testEdge(cur_emap_it);
-//            std::cerr<<"after"<<std::endl;
+            testEdge(cur_emap_it);
+            std::cerr<<"after in"<<std::endl;
 
             if (cur_emap_it->second.isInEmpty() && cur_emap_it->second.isOutEmpty()){
                 this->emap.erase(cur_emap_it); // remove the edge all together
-//                if (this->emap.find(cur_emap_it->first) != this->emap.end()){
-//                    std::cerr<<"edge still found - in"<<std::endl;
-//                }
+                if (this->emap.find(cur_emap_it->first) != this->emap.end()){
+                    std::cerr<<"edge still found - in"<<std::endl;
+                }
             }
         }
         else{
@@ -594,16 +604,20 @@ void HGraph::remove_vertex(std::map<VCoords,Vertex>::iterator vit){
     }
     for (auto eit : vit->second.getOutEdges()){ // for all outgoing edges
         // first find iterator to the edge
+        std::cerr<<"before out"<<std::endl;
+        testEdge(cur_emap_it);
         cur_emap_it = this->emap.find(std::make_pair(vit,eit.first));
+        testEdge(cur_emap_it);
+        std::cerr<<"after out"<<std::endl;
         // now we need to remove this pair of vertices from the edge
         if (cur_emap_it != this->emap.end()) {
             cur_emap_it->second.remove_vertex_pair(vit,eit.first);
 
             if (cur_emap_it->second.isInEmpty() && cur_emap_it->second.isOutEmpty()){
                 this->emap.erase(cur_emap_it); // remove the edge all together
-//                if (this->emap.find(cur_emap_it->first) != this->emap.end()){
-//                    std::cerr<<"edge still found - out"<<std::endl;
-//                }
+                if (this->emap.find(cur_emap_it->first) != this->emap.end()){
+                    std::cerr<<"edge still found - out"<<std::endl;
+                }
             }
         }
         else{
@@ -820,14 +834,16 @@ void HGraph::taylor_dfs_explicit(std::map<VCoords,Vertex>::iterator cur_vit, std
 }
 
 void HGraph::remove_vertex_dfs(std::map<VCoords,Vertex>::iterator vit){
+
 //    testAllEdges();
 
     std::vector<bool> edge_key_removed;
-    bool isKey,removed;
+    bool isKey,removed,inEdges=false,outEdges=false;
 
     std::map<Edge,Aggregate_edge_props,edge_cmp>::iterator cur_emap_it;
     for (auto eit : vit->second.getInEdges()){ // for all incoming edges
-        isKey = false;
+        inEdges = true;
+        isKey = false; // is the current vertex serving as a key to an edge
         removed = false;
         // first find iterator to the edge
         cur_emap_it = this->emap.find(std::make_pair(eit.first,vit));
@@ -836,11 +852,7 @@ void HGraph::remove_vertex_dfs(std::map<VCoords,Vertex>::iterator vit){
                 isKey = true;
             }
             // now we need to remove this pair of vertices from the edge
-//            std::cerr<<"before"<<std::endl;
-//            testEdge(cur_emap_it);
             cur_emap_it->second.remove_vertex_pair(eit.first, vit);
-//            testEdge(cur_emap_it);
-//            std::cerr<<"after"<<std::endl;
 
             if (cur_emap_it->second.isInEmpty() && cur_emap_it->second.isOutEmpty()){
                 this->emap.erase(cur_emap_it); // remove the edge all together
@@ -848,21 +860,16 @@ void HGraph::remove_vertex_dfs(std::map<VCoords,Vertex>::iterator vit){
                     edge_key_removed.emplace_back(true);
                     removed = true;
                 }
-//                if (this->emap.find(cur_emap_it->first) != this->emap.end()){
-//                    std::cerr<<"edge still found - in"<<std::endl;
-//                }
             }
             if (isKey && !removed){
                 edge_key_removed.emplace_back(false);
             }
         }
-        else{
-            std::cerr<<"WRONG IN!"<<std::endl;
-        }
         eit.first->second.remove_out_edge(vit); // now need to remove the association from the previous vertex
         vit->second.remove_in_edge(eit.first);
     }
     for (auto eit : vit->second.getOutEdges()){ // for all outgoing edges
+        outEdges = true;
         isKey = false;
         removed = false;
         // first find iterator to the edge
@@ -880,16 +887,10 @@ void HGraph::remove_vertex_dfs(std::map<VCoords,Vertex>::iterator vit){
                     edge_key_removed.emplace_back(true);
                     removed = true;
                 }
-//                if (this->emap.find(cur_emap_it->first) != this->emap.end()){
-//                    std::cerr<<"edge still found - out"<<std::endl;
-//                }
             }
             if (isKey && !removed){
                 edge_key_removed.emplace_back(false);
             }
-        }
-        else{
-            std::cerr<<"WRONG OUT!"<<std::endl;
         }
         eit.first->second.remove_in_edge(vit);
         vit->second.remove_out_edge(eit.first);
@@ -898,14 +899,21 @@ void HGraph::remove_vertex_dfs(std::map<VCoords,Vertex>::iterator vit){
     // if it does - it should not be removed unless the edge is also been removed
     // basically if either all are false or all are true
     bool removeCurVIT = true;
-    for (bool er : edge_key_removed){
-        if(!er){
+    for (bool ekr : edge_key_removed){
+        if(!ekr){
             removeCurVIT = false;
             break;
         }
     }
-    if (removeCurVIT){
+    if (removeCurVIT || (!inEdges && !outEdges)){
         this->vertices.remove_vt(vit); // now need to remove the actual vertex
+    }
+}
+
+// evaluates connected bases and removes related vertices and edges from the graph
+void HGraph::remove_vertices_dfs(std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp>& vts){
+    for (auto vit : vts){
+        this->remove_vertex_dfs(vit);
     }
 }
 
@@ -929,19 +937,8 @@ void HGraph::enforce_dfs_constraints(){
             min_len = std::min_element(std::begin(lens),std::end(lens));
             max_len = std::max_element(std::begin(lens),std::end(lens));
             if(*min_len < 150 && *max_len < 150){
-//                if (!cur_vit->second.getOutEdges().empty()) {
-//                    std::cerr << "removing" << std::endl;
-//                }
                 cur_vit++;
                 this->remove_vertex_dfs(*cur_vertices.begin());
-//                this->remove_vertices(cur_vertices);
-//                all_vertices.insert(cur_vertices.begin(), cur_vertices.end());
-//                while(true){
-//                    if(all_vertices.find(cur_vit)==all_vertices.end() || cur_vit == this->vertices.end()){ // current vertex has not been removed
-//                        break;
-//                    }
-//                    cur_vit++;
-//                }
             }
             else{
                 cur_vit++;
@@ -960,15 +957,29 @@ void HGraph::enforce_dfs_constraints(){
     }
 }
 
+// This function screens for pseudogenes and removes them
+// TODO: needs to account for multimappers - basically - the majority of vertices should be a multimapper
+//    this could be achieved during the creation of vertices, since we know if they have a given kmer has a multimapper or not
+void HGraph::remove_pseudogenes(){
+
+}
+
 // This function parses through the vertices and removes anything that does not pass vertex-specific constraints
 // such as the total length of a clique (all connected vertices)
 void HGraph::parse_vertices(){
 
-    enforce_bfs_constraints();
+//    enforce_bfs_constraints();
 
     // shortest_path(); // TODO: see if needed at all - might be useful for the longest path traversal
 
     enforce_dfs_constraints();
+
+    // TODO: now we can remove pseudogenes, by removing any stretches of vertices that do not contain any edges at all
+    //    however - this would be better to implement after parsing the edges
+    //    however, that would require changing vertices and edges from raw to exact within the graph
+
+    remove_pseudogenes();
+
 }
 
 // This function selects the best possible combination of donor-acceptor sites
