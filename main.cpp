@@ -67,7 +67,7 @@ int hairpin_quant(int argc,char* argv[]){
     process_reads_single(args_quant.get_string(Opt_Quant::UNPAIR),hg);
     std::cerr<<"parsing the graph"<<std::endl;
     hg.parse_graph();
-//    hg.write_intron_gff();
+    hg.write_intron_gff();
     if (args_quant.get_flag(Opt_Quant::SAM)) {
         // first create the execution string
         std::string cl="hairpin ";

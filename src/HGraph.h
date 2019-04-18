@@ -126,6 +126,7 @@ public:
         return -1;
     }
     void incWeight(){this->weight++;}
+    void setWeight(int wt){this->weight = wt;}
 
     int addOutEdge(std::map<VCoords,Vertex>::iterator vit){
         this->e_it = this->outEdges.insert(std::make_pair(vit,Edge_props()));
@@ -171,6 +172,20 @@ public:
         this->inEdges.erase(emap_it_found);
     }
 
+    void correct_start(uint8_t cor){
+        this->start_cor = cor;
+    }
+    void correct_end(uint8_t cor){
+        this->end_cor = cor;
+    }
+
+    uint8_t getEndCor(){
+        return this->end_cor;
+    }
+    uint8_t getStartCor(){
+        return this->start_cor;
+    }
+
 private:
     int weight=0;
 
@@ -179,6 +194,9 @@ private:
     std::map<std::map<VCoords,Vertex>::iterator,Edge_props,vmap_cmp> outEdges{};
     std::map<std::map<VCoords,Vertex>::iterator,Edge_props,vmap_cmp> inEdges{};
     EMap_it e_it;
+
+    uint8_t start_cor = 0; // correction of the start coordinate after edge refinement
+    uint8_t end_cor = 0; // correction of the end coordinate after edge reginement;
 };
 
 class VMap{
@@ -245,7 +263,7 @@ public:
     void setKnown(){this->known=true;} // set the current edge as known/annotated
     bool isKnown(){return this->known;} // is the current edge known/annotated
     void validate(){ this->valid=true;} // for an unknown edge - modify the edge and the vertices to the inferred ones; refine coordinates and set the validation flag
-    bool isValid(){return this->valid;}
+    bool isValid() const {return this->valid;}
     int getWeight() const {
         int total=0;
         for(auto vt : this->nexts){ // there is a problem here - we can not go to the exact edge in the vertex which is needed to compute the weight of a given edge
@@ -260,6 +278,8 @@ public:
     }
     uint32_t getStart() const {return prevs[0]->first.getEnd();}
     uint32_t getEnd() const {return nexts[0]->first.getStart();}
+    uint32_t getStartCor() const {return (uint32_t)prevs[0]->second.getEndCor();}
+    uint32_t getEndCor() const {return (uint32_t)nexts[0]->second.getStartCor();}
     uint8_t getChr() const {return prevs[0]->first.getChr();}
     uint8_t getStrand() const {return prevs[0]->first.getStrand();}
 

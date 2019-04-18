@@ -212,17 +212,16 @@ void HGraph::write_intron_gff() {
     edges_fname.append(".intron.gff");
     std::ofstream edges_fp(edges_fname.c_str());
 
-    int counter=0;
     std::string sub_seq;
     for(const auto& eit : this->emap){
+        if (!eit.second.isValid()){
+            continue;
+        }
         // first get fasta sequence
-        this->getGenomeSubstr(eit.first,this->stats.kmerlen-2,sub_seq);
+        std::cerr<<(int)eit.second.getStartCor()<<std::endl;
         edges_fp << this->hdb->getContigFromID(eit.second.getChr()) << "\t" << "hairpin" << "\t" << "intron" << "\t"
-                 << eit.second.getStart() << "\t" << eit.second.getEnd() << "\t"
-                 << "." << "\t" << eit.second.getStrand() << "\t" << "." << "\t" <<  "weight="<<eit.second.getWeight()
-                 <<";start="<< sub_seq.substr(0,this->stats.kmerlen) <<";end=" << sub_seq.substr(sub_seq.length()-(this->stats.kmerlen),this->stats.kmerlen) << std::endl;
-
-        counter++;
+                 << eit.second.getStart() - eit.second.getStartCor() << "\t" << eit.second.getEnd() + eit.second.getEndCor() << "\t"
+                 << "." << "\t" << eit.second.getStrand() << "\t" << "." << "\t" <<  "weight=1" << std::endl;
     }
 
     edges_fp.close();
@@ -1076,38 +1075,62 @@ bool HGraph::edge_less(const Edge& prev, const Edge& next){
 
 // This function edits the graph based on the "raw" edge and the "parsed" edges
 void HGraph::edit_graph(std::map<Edge,Aggregate_edge_props>::iterator& eit, SJS& sm){
-    // first create the base prev and next vertices from the original ones
-    SJS::iterator sm_it = sm.begin();
-    std::map<VCoords,Vertex>::iterator start_it,end_it;
+    // TODO: different strategy for edge correction in the graph
+    //   creating new vertices and edges is very expensive since multiple other vertices (nexts and prevs) are affected and as a result their edges are affected as well
+    //   instead we can provide a correction value in the vertex properties for the number of bases by which vertex start and end need to be corrected
+    //   this however will require significantly more memory and will have to be taken into account by many other functions... ughh....
+    //   additionally, what if the new vertex created is a key to another edge? does that mean we need to create an entirely new edge for that as well???
+    //   this is way too expensive
+    //   I guess this is the most sane solution, however heavy modification will be required
 
-    start_it = this->add_vertex(eit->first.first->first.getChr(),
-                                     eit->first.first->first.getStrand(),
-                                     eit->first.first->first.getStart(),
-                                     std::get<3>(sm_it->first) - eit->first.first->first.getStart()); // add start vertex
-    end_it = this->add_vertex(eit->first.second->first.getChr(),
-                              eit->first.second->first.getStrand(),
-                              std::get<3>(sm_it->first),
-                              eit->first.second->first.getEnd()-(eit->first.second->first.getEnd()-std::get<3>(sm_it->first))); // add start vertex
-
-    this->add_edge(start_it,end_it); // form an edge
-
-    // the following needs to be done
-    // update all the vertex components
-
-    // now just need to modify all other prev and next vertices and attach them to the edge
+    auto sm_it = sm.begin();
     for (auto& prev : eit->second.getPrevs()){
-        for (auto& next : eit->second.getNexts()){
-            // find a pair of vertices and remove them
-            for (auto pn : prev->second.getOutEdges()){
-                for (auto np : next->second.getInEdges()){
-                    if (pn.first == next && np.first == prev){
-                    }
-                }
-            }
-        }
+        prev->second.correct_end(prev->first.getEnd() - std::get<2>(sm_it->first));
+        std::cerr<<"\t"<<(int)(prev->first.getEnd() - std::get<2>(sm_it->first))<<std::endl;
+    }
+    for (auto& next : eit->second.getNexts()){
+        next->second.correct_start(std::get<3>(sm_it->first) - next->first.getStart());
+        std::cerr<<"\t"<<(int)(std::get<3>(sm_it->first) - next->first.getStart())<<std::endl;
     }
 
-    this->emap_it.first->second.validate();
+    eit->second.validate();
+
+    // first create the base prev and next vertices from the original ones
+//    std::map<VCoords,Vertex>::iterator start_it,end_it;
+//
+//    start_it = this->add_vertex(eit->first.first->first.getChr(),
+//                                     eit->first.first->first.getStrand(),
+//                                     eit->first.first->first.getStart(),
+//                                     std::get<3>(sm_it->first) - eit->first.first->first.getStart()); // add start vertex
+//    end_it = this->add_vertex(eit->first.second->first.getChr(),
+//                              eit->first.second->first.getStrand(),
+//                              std::get<3>(sm_it->first),
+//                              eit->first.second->first.getEnd()-(eit->first.second->first.getEnd()-std::get<3>(sm_it->first))); // add start vertex
+//
+//    start_it->second.addOutEdge(end_it);
+//    end_it->second.addInEdge(start_it);
+//    start_it->second.setWeight(eit->first.first->second.getWeight());
+//    end_it->second.setWeight(eit->first.second->second.getWeight());
+//
+//    this->add_edge(start_it,end_it); // form an edge
+//
+//    // the following needs to be done
+//    // update all the vertex components
+//
+//    // now just need to modify all other prev and next vertices and attach them to the edge
+//    for (auto& prev : eit->second.getPrevs()){
+//        for (auto& next : eit->second.getNexts()){
+//            // find a pair of vertices and remove them
+//            for (auto pn : prev->second.getOutEdges()){
+//                for (auto np : next->second.getInEdges()){
+//                    if (pn.first == next && np.first == prev){
+//                    }
+//                }
+//            }
+//        }
+//    }
+//
+//    this->emap_it.first->second.validate();
 }
 
 // parse graph and evaluate gaps and assign splice junctions and mismatches and gaps
@@ -1130,10 +1153,10 @@ void HGraph::parse_graph() {
     auto eit = this->emap.begin();
 
     for (;eit != this->emap.end();){
-        if (eit->second.isValid()){ // make sure the edge has not been previously validated
-            ++eit;
-            continue;
-        }
+//        if (eit->second.isValid()){ // make sure the edge has not been previously validated
+//            ++eit;
+//            continue;
+//        }
         SJS sjs_map;
         evaluate_donor_acceptor(*eit,sjs_map);
         if (sjs_map.empty()){
