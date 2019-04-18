@@ -361,6 +361,8 @@ private:
             uint32_t prev_end = prev.first->first.getEnd(), next_end = next.first->first.getEnd();
             uint32_t prev_start = prev.second->first.getStart(), next_start = next.second->first.getStart();
             return std::tie(prev_end,prev_start) < std::tie(next_end,next_start);
+//             return std::get<0>(prev) < std::get<0>(next) || std::get<1>(prev) < std::get<1>(next) ||
+//                               std::get<2>(prev) < std::get<2>(next) || std::get<3>(prev) < std::get<3>(next);
         }
     };
 
@@ -421,9 +423,9 @@ private:
     typedef std::tuple<uint8_t,uint8_t,uint32_t,uint32_t> SJ; // defines the type of a splice junction
     struct sjs_cmp { // Comparator for the SJS map
         bool operator()(const SJ& prev, const SJ& next) const {
-            return std::tie(std::get<0>(prev),std::get<1>(prev),std::get<2>(prev),std::get<3>(prev)) < std::tie(std::get<0>(next),std::get<1>(next),std::get<2>(next),std::get<3>(next));
-//            return std::get<0>(prev) < std::get<0>(next) || std::get<1>(prev) < std::get<1>(next) ||
-//                   std::get<2>(prev) < std::get<2>(next) || std::get<3>(prev) < std::get<3>(next);
+//            return std::tie(std::get<0>(prev),std::get<1>(prev),std::get<2>(prev),std::get<3>(prev)) < std::tie(std::get<0>(next),std::get<1>(next),std::get<2>(next),std::get<3>(next));
+            return std::get<0>(prev) < std::get<0>(next) || std::get<1>(prev) < std::get<1>(next) ||
+                   std::get<2>(prev) < std::get<2>(next) || std::get<3>(prev) < std::get<3>(next);
         }
     };
 
@@ -449,6 +451,7 @@ private:
     void enforce_bfs_constraints();
     void enforce_dfs_constraints();
     void parse_vertices();
+    void parse_edges();
 
     typedef std::map<SJ,std::tuple<double,double>,sjs_cmp> SJS; // defines a type for a map of splice junctions
 

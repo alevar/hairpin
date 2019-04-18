@@ -165,6 +165,12 @@ void HGraph::add_read(std::string &read) {
     }
     std::map<std::map<VCoords,Vertex>::iterator,uint8_t>::iterator ci1,ci2;
 
+    // here need to store stretches of connected vertices from a given read
+    // this will allow us to compute the total read length
+    // hopefully screening for them here will allow us to remove some false edges...
+    std::vector<std::tuple<int,int, std::map<VCoords,Vertex>::iterator,std::map<VCoords,Vertex>::iterator > >read_chains; // contains an index from, index two and two corresponding iterators
+
+    int idx1=0,idx2=0; // current indices within ci1 and ci2
     for (ci1=extends_final.begin();ci1!=std::prev(extends_final.end());ci1++){
         // create the first vertex
         for(ci2=std::next(ci1);ci2!=extends_final.end();ci2++){
@@ -177,13 +183,20 @@ void HGraph::add_read(std::string &read) {
                 dist <= this->maxIntron && // is not backward and is not greater than the maximum intron length; no minum threshold to permit edges to form for errors
                 kmerDist <= this->stats.kmerlen &&
                 kmerDist >= this->stats.kmerlen/2){ // follows the expected number of missed kmers; the division by two here is due to the fact that an overhang can not be in the second half, since otherwise there would not be enough space on the receiving end
+
+                // here we can check if the index has been created for
+                // ideally vertex creation would also be performed here instead of above, since that way we could easily remove vertices before inserting them into the map
                 this->add_edge(ci1->first,ci2->first); // form an edge
             }
+            idx2++;
         }
+        idx1++;
     }
+
+    // only add chains if the read_chains contains enough bases
     // TODO: quite a bit of refinement can be done ere as well
     //    for instance this is the place where we cn enforce not creating any vertices, that do not pass the next:
-    //    no short excerpts (smalles exon length)
+    //    no short excerpts (smallest exon length)
     //    total read length (minimum number of bases in a single read formation)
 }
 
@@ -218,7 +231,6 @@ void HGraph::write_intron_gff() {
             continue;
         }
         // first get fasta sequence
-        std::cerr<<(int)eit.second.getStartCor()<<std::endl;
         edges_fp << this->hdb->getContigFromID(eit.second.getChr()) << "\t" << "hairpin" << "\t" << "intron" << "\t"
                  << eit.second.getStart() - eit.second.getStartCor() << "\t" << eit.second.getEnd() + eit.second.getEndCor() << "\t"
                  << "." << "\t" << eit.second.getStrand() << "\t" << "." << "\t" <<  "weight=1" << std::endl;
@@ -855,7 +867,7 @@ void HGraph::enforce_dfs_constraints(){
 // TODO: needs to account for multimappers - basically - the majority of vertices should be a multimapper
 //    this could be achieved during the creation of vertices, since we know if they have a given kmer has a multimapper or not
 void HGraph::remove_pseudogenes(){
-
+    // perform breadth-first search
 }
 
 // This function parses through the vertices and removes anything that does not pass vertex-specific constraints
@@ -1086,11 +1098,9 @@ void HGraph::edit_graph(std::map<Edge,Aggregate_edge_props>::iterator& eit, SJS&
     auto sm_it = sm.begin();
     for (auto& prev : eit->second.getPrevs()){
         prev->second.correct_end(prev->first.getEnd() - std::get<2>(sm_it->first));
-        std::cerr<<"\t"<<(int)(prev->first.getEnd() - std::get<2>(sm_it->first))<<std::endl;
     }
     for (auto& next : eit->second.getNexts()){
         next->second.correct_start(std::get<3>(sm_it->first) - next->first.getStart());
-        std::cerr<<"\t"<<(int)(std::get<3>(sm_it->first) - next->first.getStart())<<std::endl;
     }
 
     eit->second.validate();
@@ -1133,30 +1143,11 @@ void HGraph::edit_graph(std::map<Edge,Aggregate_edge_props>::iterator& eit, SJS&
 //    this->emap_it.first->second.validate();
 }
 
-// parse graph and evaluate gaps and assign splice junctions and mismatches and gaps
-void HGraph::parse_graph() {
-
-    // first need to parse the vertices, and remove any stretches that do not pass vertex-specific constraints
-    std::cerr<<"\tparsing vertices"<<std::endl;
-    this->parse_vertices();
-
-    std::cerr<<"\tmaking dot"<<std::endl;
-    make_dot();
-
-    std::cerr<<"\tparsing edges"<<std::endl;
-
-    // next iterate over the edges and output ready introns
-    std::string edges_fname(this->out_fname);
-    edges_fname.append(".intron.parsed.gff");
-    std::ofstream edges_fp(edges_fname.c_str());
-
+void HGraph::parse_edges(){
     auto eit = this->emap.begin();
 
     for (;eit != this->emap.end();){
-//        if (eit->second.isValid()){ // make sure the edge has not been previously validated
-//            ++eit;
-//            continue;
-//        }
+
         SJS sjs_map;
         evaluate_donor_acceptor(*eit,sjs_map);
         if (sjs_map.empty()){
@@ -1190,21 +1181,26 @@ void HGraph::parse_graph() {
         // at this point we need to pass the sjs map and the eit to the edit_graph function
         edit_graph(eit,sjs_map);
 
-        // since removing an edge involves a modification to the vertex object (length and end)
-        // and VCoords objects in the VMap are declared const as keys to the map
-        // we can remove them from the map temporarily - create a new VCoords object with modified length and end and put it back into the graph
-
-        for(auto eit2 : sjs_map) {
-            // TODO: need to remove the old edge and include the new edges in the main graph here
-            //      so that upon the next edge evaluation everything is correctly accounted for.
-            edges_fp << this->hdb->getContigFromID(eit->second.getChr()) << "\t" << "hairpin" << "\t" << "intron" << "\t"
-                     << std::get<2>(eit2.first) << "\t" << std::get<3>(eit2.first) << "\t"
-                     << "." << "\t" << eit->second.getStrand() << "\t" << "." << "\t" << "weight=" <<  std::endl;
-        }
-
         ++eit;
     }
-    edges_fp.close();
+}
+
+// parse graph and evaluate gaps and assign splice junctions and mismatches and gaps
+void HGraph::parse_graph() {
+
+    // first need to parse the vertices, and remove any stretches that do not pass vertex-specific constraints
+    std::cerr<<"\tparsing vertices"<<std::endl;
+    this->parse_vertices();
+
+    std::cerr<<"\tparsing edges"<<std::endl;
+    parse_edges();
+
+    std::cerr<<"\tparsing vertices: pass #2"<<std::endl;
+    this->parse_vertices();
+
+    std::cerr<<"\tmaking dot"<<std::endl;
+    make_dot();
+
 }
 
 void HGraph::generate_sam_header(std::ofstream& sam_fp,std::string& cl){ // generate the header from the database information

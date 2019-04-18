@@ -47,7 +47,7 @@ int hairpin_quant(int argc,char* argv[]){
     args_quant.add_string(Opt_Quant::READ2,"input2","","second mate of a pair if paired-end sequencing");
     args_quant.add_string(Opt_Quant::UNPAIR,"unpaired","","reads if single-end sequencing");
     args_quant.add_string(Opt_Quant::REF,"reference","","reference genome sequence");
-    args_quant.add_int(Opt_Quant::MAX,"max_intron",30000,"maximum allowed intron length");
+    args_quant.add_int(Opt_Quant::MAX,"max_intron",200000,"maximum allowed intron length");
     args_quant.add_int(Opt_Quant::MIN,"min_intron",20,"minimum allowed intron length");
     args_quant.add_int(Opt_Quant::MIN_MM,"min_mismatch",0,"minimum number of mismatches permitted for a read");
     args_quant.add_int(Opt_Quant::MAX_MM,"max_mismatch",0,"maximum number of mismatches permitted for a read");
