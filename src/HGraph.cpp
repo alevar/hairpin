@@ -11,13 +11,14 @@ HGraph::HGraph(HDB* hdb){
     this->stats.kmerlen=this->hdb->getKmerLen();
 }
 
-HGraph::HGraph(HDB* hdb,int max_intron,int min_intron,int min_mismatch,std::string out_fname){
+HGraph::HGraph(HDB* hdb,int max_intron,int min_intron,int min_mismatch,std::string out_fname,int min_loc){
     this->hdb=hdb;
     this->stats.kmerlen=this->hdb->getKmerLen();
     this->maxIntron=max_intron;
     this->minIntron=min_intron;
     this->out_fname=out_fname;
     this->minMismatch=min_mismatch;
+    this->min_loc=min_loc;
 }
 
 HGraph::~HGraph() = default;
@@ -168,11 +169,12 @@ void HGraph::add_read(std::string &read) {
     // here need to store stretches of connected vertices from a given read
     // this will allow us to compute the total read length
     // hopefully screening for them here will allow us to remove some false edges...
-    std::vector<std::tuple<int,int, std::map<VCoords,Vertex>::iterator,std::map<VCoords,Vertex>::iterator > >read_chains; // contains an index from, index two and two corresponding iterators
+    std::vector<std::tuple<int,int, std::map<VCoords,Vertex>::iterator,std::map<VCoords,Vertex>::iterator > > read_chains; // contains an index from, index two and two corresponding iterators
 
     int idx1=0,idx2=0; // current indices within ci1 and ci2
     for (ci1=extends_final.begin();ci1!=std::prev(extends_final.end());ci1++){
         // create the first vertex
+        idx2=idx1+1;
         for(ci2=std::next(ci1);ci2!=extends_final.end();ci2++){
 
             int dist=ci2->first->first - ci1->first->first - ci1->first->first.getLength();
@@ -186,12 +188,27 @@ void HGraph::add_read(std::string &read) {
 
                 // here we can check if the index has been created for
                 // ideally vertex creation would also be performed here instead of above, since that way we could easily remove vertices before inserting them into the map
+                read_chains.emplace_back(std::make_tuple(idx1,idx2,ci1->first,ci2->first));
+
                 this->add_edge(ci1->first,ci2->first); // form an edge
             }
             idx2++;
         }
         idx1++;
     }
+
+    // now we need to build chains of vertices
+    std::vector<std::vector<int> > vt_chains; // chains of indices, which can then be formed into vertices and edges
+
+    std::vector<std::tuple<int,int, std::map<VCoords,Vertex>::iterator,std::map<VCoords,Vertex>::iterator > >::iterator ri1,ri2;
+
+//    for (ri1=read_chains.begin();ri1!=std::prev(read_chains.end());ri1++) {
+//        for (ri2 = std::next(ri1); ri2 != read_chains.end(); ri2++) {
+//            if (vt_chains.empty()){
+//                vt_chains.emplace_back();
+//            }
+//        }
+//    }
 
     // only add chains if the read_chains contains enough bases
     // TODO: quite a bit of refinement can be done ere as well
@@ -611,19 +628,26 @@ void HGraph::enforce_bfs_constraints(){
 
     auto cur_vit = this->vertices.begin();
     std::map<VCoords,Vertex>::iterator next_vit;
-
+    int counter = 0;
     while (true){
+        counter++;
+//        std::cerr<<counter<<std::endl;
         next_vit = this->taylor_bfs(cur_vit,cur_vertices);
 
-        next_vit++;
+//        next_vit++;
 
         cur_clique_length = clique_length(cur_vertices);
 
-        if (cur_clique_length < 151){
-            this->remove_vertices(cur_vertices);
+        if (cur_clique_length < this->min_loc){ // make sure tha the number of bases in the current bfs result is greater than the minimum locus length
+//            this->remove_vertices(cur_vertices);
+            cur_vit++;
+            this->remove_vertex_dfs(*cur_vertices.begin());
+        }
+        else{
+            cur_vit++;
         }
         cur_vertices.clear(); // clear the vertex sequence
-        cur_vit = next_vit;
+//        cur_vit = next_vit;
 
         if (cur_vit == this->vertices.end()){
             break;

@@ -38,7 +38,8 @@ int hairpin_quant(int argc,char* argv[]){
         SAM   = 's',
         CANONICAL = 'c',
         SEMICANONICAL = 'e',
-        NONCANONICAL = 'n'};
+        NONCANONICAL = 'n',
+        MIN_LOC = 'a'};
 
     ArgParse args_quant("hairpin_align");
     args_quant.add_string(Opt_Quant::HDB_FP,"hdb","","path to the database directory");
@@ -55,6 +56,7 @@ int hairpin_quant(int argc,char* argv[]){
     args_quant.add_double(Opt_Quant::CANONICAL,"can",1.0,"0-1 weight of canonical donor and acceptor bases");
     args_quant.add_double(Opt_Quant::SEMICANONICAL,"semi",0.5,"0-1 weight of semi-canonical donor and acceptor bases");
     args_quant.add_double(Opt_Quant::NONCANONICAL,"non",0.25,"0-1 weight of noncanonical donor and acceptor basees");
+    args_quant.add_int(Opt_Quant::MIN_LOC,"ml",300,"minimum length of a locus");
 
     args_quant.parse_args(argc,argv);
 
@@ -62,7 +64,11 @@ int hairpin_quant(int argc,char* argv[]){
     std::cerr<<"Loading the database"<<std::endl;
     hdb.load_db(args_quant.get_string(Opt_Quant::HDB_FP));
 
-    HGraph hg(&hdb,args_quant.get_int(Opt_Quant::MAX),args_quant.get_int(Opt_Quant::MIN),args_quant.get_int(Opt_Quant::MIN_MM),args_quant.get_string(Opt_Quant::OUTPUT));
+    HGraph hg(&hdb,args_quant.get_int(Opt_Quant::MAX),
+                   args_quant.get_int(Opt_Quant::MIN),
+                   args_quant.get_int(Opt_Quant::MIN_MM),
+                   args_quant.get_string(Opt_Quant::OUTPUT),
+                   args_quant.get_int(Opt_Quant::MIN_LOC));
     std::cerr<<"processing reads"<<std::endl;
     process_reads_single(args_quant.get_string(Opt_Quant::UNPAIR),hg);
     std::cerr<<"parsing the graph"<<std::endl;

@@ -331,7 +331,7 @@ class HGraph {
 public:
     HGraph();
     explicit HGraph(HDB* hdb);
-    HGraph(HDB* hdb,int max_intron,int min_intron,int min_mismatch,std::string out_fname);
+    HGraph(HDB* hdb,int max_intron,int min_intron,int min_mismatch,std::string out_fname,int min_loc);
     ~HGraph();
 
     void add_read(std::string& read);
@@ -350,6 +350,7 @@ public:
 private:
 
     int minMismatch=0;
+    int min_loc;
 
     std::map<VCoords,Vertex>::iterator add_vertex(uint8_t chrID,uint8_t strand,uint32_t pos,uint8_t length);
 
