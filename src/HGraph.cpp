@@ -11,7 +11,7 @@ HGraph::HGraph(HDB* hdb){
     this->stats.kmerlen=this->hdb->getKmerLen();
 }
 
-HGraph::HGraph(HDB* hdb,int max_intron,int min_intron,int min_mismatch,std::string out_fname,int min_loc){
+HGraph::HGraph(HDB* hdb,int max_intron,int min_intron,int min_mismatch,std::string out_fname,int min_loc,int min_el){
     this->hdb=hdb;
     this->stats.kmerlen=this->hdb->getKmerLen();
     this->maxIntron=max_intron;
@@ -19,6 +19,7 @@ HGraph::HGraph(HDB* hdb,int max_intron,int min_intron,int min_mismatch,std::stri
     this->out_fname=out_fname;
     this->minMismatch=min_mismatch;
     this->min_loc=min_loc;
+    this->min_el=min_el;
 }
 
 HGraph::~HGraph() = default;
@@ -59,7 +60,7 @@ void HGraph::add_read(std::string &read) {
     }
     std::string kmer;
 
-    std::map<VCoords,Vertex>::iterator cur_vertex_it;
+    std::map<VCoords,Vertex>::iterator cur_vertex_it,cur_vertex_it2;
 
     std::map<std::map<VCoords,Vertex>::iterator,uint8_t,map_vit_cmp> extends_final; // holds final extension which should no longer be modified
     std::map<CoordVec,PosPair> extends; // groups of vertices that form stretches - will form edges between them afterwards; second element is the current length of the extendion
@@ -190,31 +191,45 @@ void HGraph::add_read(std::string &read) {
                 // ideally vertex creation would also be performed here instead of above, since that way we could easily remove vertices before inserting them into the map
                 read_chains.emplace_back(std::make_tuple(idx1,idx2,ci1->first,ci2->first));
 
-                this->add_edge(ci1->first,ci2->first); // form an edge
+//                this->add_edge(ci1->first,ci2->first); // form an edge
             }
             idx2++;
         }
         idx1++;
     }
 
-    // now we need to build chains of vertices
-    std::vector<std::vector<int> > vt_chains; // chains of indices, which can then be formed into vertices and edges
+    if(!read_chains.empty()) {
+        if (read_chains.size()==1){
+            cur_vertex_it = std::get<2>(read_chains.back());
+            cur_vertex_it2 = std::get<3>(read_chains.back());
+            if(cur_vertex_it->first.getLength() + cur_vertex_it2->first.getLength() >= 89){
+                this->add_edge(cur_vertex_it,cur_vertex_it2);
+                return;
+            }
+        }
+        // now we need to build chains of vertices
+        std::vector<std::vector<int> > vt_chains; // chains of indices, which can then be formed into vertices and edges
 
-    std::vector<std::tuple<int,int, std::map<VCoords,Vertex>::iterator,std::map<VCoords,Vertex>::iterator > >::iterator ri1,ri2;
+        std::vector<std::tuple<int, int, std::map<VCoords, Vertex>::iterator, std::map<VCoords, Vertex>::iterator> >::iterator ri1, ri2;
 
-//    for (ri1=read_chains.begin();ri1!=std::prev(read_chains.end());ri1++) {
-//        for (ri2 = std::next(ri1); ri2 != read_chains.end(); ri2++) {
-//            if (vt_chains.empty()){
-//                vt_chains.emplace_back();
-//            }
-//        }
-//    }
+        for (ri1 = read_chains.begin(); ri1 != std::prev(read_chains.end()); ri1++) {
+            if (vt_chains.empty()) {
+//                std::cerr << "hello" << std::endl;
+                vt_chains.emplace_back(std::vector<int>(std::get<0>(*ri1)));
+                vt_chains[0].emplace_back(std::get<1>(*ri1));
+            }
+            for (ri2 = std::next(ri1); ri2 != read_chains.end(); ri2++) {
+                // here we need to find anything that matches
+                // if nothing matches, than the chain is complete and we can evaluate it and either create an edge or remove the thing all together from the vt_chains
+            }
+        }
 
-    // only add chains if the read_chains contains enough bases
-    // TODO: quite a bit of refinement can be done ere as well
-    //    for instance this is the place where we cn enforce not creating any vertices, that do not pass the next:
-    //    no short excerpts (smallest exon length)
-    //    total read length (minimum number of bases in a single read formation)
+        // only add chains if the read_chains contains enough bases
+        // TODO: quite a bit of refinement can be done ere as well
+        //    for instance this is the place where we cn enforce not creating any vertices, that do not pass the next:
+        //    no short excerpts (smallest exon length)
+        //    total read length (minimum number of bases in a single read formation)
+    }
 }
 
 // print general statistics about the quantification process

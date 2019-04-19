@@ -39,7 +39,8 @@ int hairpin_quant(int argc,char* argv[]){
         CANONICAL = 'c',
         SEMICANONICAL = 'e',
         NONCANONICAL = 'n',
-        MIN_LOC = 'a'};
+        MIN_LOC = 'a',
+        MIN_EL = 'f'};
 
     ArgParse args_quant("hairpin_align");
     args_quant.add_string(Opt_Quant::HDB_FP,"hdb","","path to the database directory");
@@ -57,6 +58,7 @@ int hairpin_quant(int argc,char* argv[]){
     args_quant.add_double(Opt_Quant::SEMICANONICAL,"semi",0.5,"0-1 weight of semi-canonical donor and acceptor bases");
     args_quant.add_double(Opt_Quant::NONCANONICAL,"non",0.25,"0-1 weight of noncanonical donor and acceptor basees");
     args_quant.add_int(Opt_Quant::MIN_LOC,"ml",300,"minimum length of a locus");
+    args_quant.add_int(Opt_Quant::MIN_EL,"me",50,"minimum length of exons");
 
     args_quant.parse_args(argc,argv);
 
@@ -68,7 +70,8 @@ int hairpin_quant(int argc,char* argv[]){
                    args_quant.get_int(Opt_Quant::MIN),
                    args_quant.get_int(Opt_Quant::MIN_MM),
                    args_quant.get_string(Opt_Quant::OUTPUT),
-                   args_quant.get_int(Opt_Quant::MIN_LOC));
+                   args_quant.get_int(Opt_Quant::MIN_LOC),
+                   args_quant.get_int(Opt_Quant::MIN_EL));
     std::cerr<<"processing reads"<<std::endl;
     process_reads_single(args_quant.get_string(Opt_Quant::UNPAIR),hg);
     std::cerr<<"parsing the graph"<<std::endl;
