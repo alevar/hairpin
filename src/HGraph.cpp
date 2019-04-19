@@ -197,30 +197,53 @@ void HGraph::add_read(std::string &read) {
         }
         idx1++;
     }
-
+    int min_len = 120;
     if(!read_chains.empty()) {
         if (read_chains.size()==1){
             cur_vertex_it = std::get<2>(read_chains.back());
             cur_vertex_it2 = std::get<3>(read_chains.back());
-            if(cur_vertex_it->first.getLength() + cur_vertex_it2->first.getLength() >= 89){
+            if(cur_vertex_it->first.getLength() + cur_vertex_it2->first.getLength() >= min_len){
                 this->add_edge(cur_vertex_it,cur_vertex_it2);
                 return;
             }
         }
         // now we need to build chains of vertices
-        std::vector<std::vector<int> > vt_chains; // chains of indices, which can then be formed into vertices and edges
+        std::vector<std::vector<std::pair<int,std::map<VCoords,Vertex>::iterator> > > vt_chains; // chains of indices, which can then be formed into vertices and edges
 
         std::vector<std::tuple<int, int, std::map<VCoords, Vertex>::iterator, std::map<VCoords, Vertex>::iterator> >::iterator ri1, ri2;
 
-        for (ri1 = read_chains.begin(); ri1 != std::prev(read_chains.end()); ri1++) {
+        for (auto& ri : read_chains){
             if (vt_chains.empty()) {
 //                std::cerr << "hello" << std::endl;
-                vt_chains.emplace_back(std::vector<int>(std::get<0>(*ri1)));
-                vt_chains[0].emplace_back(std::get<1>(*ri1));
+                vt_chains.emplace_back(std::vector<std::pair<int,std::map<VCoords, Vertex>::iterator> >{std::make_pair(std::get<0>(ri),std::get<2>(ri))});
+                vt_chains.back().emplace_back(std::make_pair(std::get<1>(ri),std::get<3>(ri)));
             }
-            for (ri2 = std::next(ri1); ri2 != read_chains.end(); ri2++) {
-                // here we need to find anything that matches
-                // if nothing matches, than the chain is complete and we can evaluate it and either create an edge or remove the thing all together from the vt_chains
+            else{
+                bool found = false;
+                for(auto& vt_it : vt_chains){
+                    if (vt_it.back().first == std::get<0>(ri)){ // found a match
+                        vt_it.emplace_back(std::make_pair(std::get<1>(ri),std::get<3>(ri)));
+                        found = true;
+                    }
+                }
+                if (!found){ // nothing was found - create a new entry
+//                    std::cerr<<std::get<0>(ri)<<"\t"<<std::get<1>(ri)<<std::endl;
+                    vt_chains.emplace_back(std::vector<std::pair<int,std::map<VCoords, Vertex>::iterator> >{std::make_pair(std::get<0>(ri),std::get<2>(ri))});
+                    vt_chains.back().emplace_back(std::make_pair(std::get<1>(ri),std::get<3>(ri)));
+                }
+            }
+        }
+
+        // now need to evaluate the chains that have been created
+        for (auto& vt : vt_chains){
+            int tot_len=0;
+            for(auto & vt_in : vt){
+                tot_len = tot_len + vt_in.second->first.getLength();
+            }
+            if (tot_len >= min_len){
+                for(auto vt_in=vt.begin();vt_in != std::prev(vt.end());vt_in++){ // create edges
+                    this->add_edge(vt_in->second,std::next(vt_in)->second);
+                }
             }
         }
 
