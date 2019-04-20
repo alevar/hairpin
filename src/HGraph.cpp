@@ -197,7 +197,7 @@ void HGraph::add_read(std::string &read) {
         }
         idx1++;
     }
-    int min_len = 120;
+    int min_len = 145;
     if(!read_chains.empty()) {
         if (read_chains.size()==1){
             cur_vertex_it = std::get<2>(read_chains.back());
@@ -251,7 +251,6 @@ void HGraph::add_read(std::string &read) {
         // TODO: quite a bit of refinement can be done ere as well
         //    for instance this is the place where we cn enforce not creating any vertices, that do not pass the next:
         //    no short excerpts (smallest exon length)
-        //    total read length (minimum number of bases in a single read formation)
     }
 }
 
@@ -1305,16 +1304,79 @@ void HGraph::to_sam(std::string& cl) {
     sam_fname.append(".sam");
     std::ofstream sam_fp(sam_fname.c_str());
 
+    this->generate_sam_header(sam_fp,cl);
+
+    // lets do it in a simple way by directly outputting the vertices and the nearest explicitely connected vertices
+    // TODO: how to deal with the vertices on the other side of an edge???
+    int id_counter = 0; // assigns arbitrary read IDs
+    for (auto& vit : this->vertices){
+        if (vit.second.getOutEdges().empty() && vit.second.getInEdges().empty()) {
+            for (int iter=0;iter<vit.second.getWeight();iter++) {
+                sam_fp << "read_" << id_counter << "\t"
+                       << 0 << "\t" // TODO: need to compute the actual flag
+                       << this->hdb->getContigFromID(vit.first.getChr()) << "\t"
+                       << vit.first.getStart() << "\t"
+                       << 60 << "\t"
+                       << (int)vit.first.getLength() << "M" << "\t"
+                       << "*" << "\t" // TODO: needs to reflect paired info for paired-end mode
+                       << 0 << "\t" // TODO: needs to reflect paired info for paired-end mode
+                       << 0 << "\t" // TODO: needs to reflect paired info for paired-end mode
+                       << "*" << "\t"
+                       << "*" << "\t"
+                       << "XS:A:" << vit.first.getStrand() << "\t"
+                       << "NH:i:1" << std::endl;
+                id_counter++;
+            }
+        }
+    }
+    // now we can deal with the edges
+    for(const auto& eit : this->emap){
+        if (!eit.second.isValid()){
+            continue;
+        }
+        std::vector<std::map<VCoords,Vertex>::iterator> nexts = eit.second.getNexts();
+        std::vector<std::map<VCoords,Vertex>::iterator> prevs = eit.second.getPrevs();
+        std::vector<std::map<VCoords,Vertex>::iterator>::iterator v1,v2;
+        int pos = 0; // since nexts and prevs are paired (correspondence of indices of vertices that formed an edge), this position keeps track of that
+        for (v1 = prevs.begin();v1 != prevs.end(); v1++){
+            for(int iter = 0;iter<(*v1)->second.getWeight();iter++){
+                sam_fp << "read_" << id_counter << "\t"
+                       << 0 << "\t" // TODO: need to compute the actual flag
+                       << this->hdb->getContigFromID(eit.second.getChr()) << "\t"
+                       << (*v1)->first.getStart() << "\t"
+                       << 60 << "\t"
+                       << (int)(*v1)->first.getLength() - eit.second.getStartCor() << "M"
+                                << (eit.second.getEnd() + eit.second.getEndCor())-(eit.second.getStart() - eit.second.getStartCor()) << "N"
+                                << nexts.at(pos)->first.getLength() - eit.second.getEndCor() << "M" << "\t"
+                       << "*" << "\t" // TODO: needs to reflect paired info for paired-end mode
+                       << 0 << "\t" // TODO: needs to reflect paired info for paired-end mode
+                       << 0 << "\t" // TODO: needs to reflect paired info for paired-end mode
+                       << "*" << "\t"
+                       << "*" << "\t"
+                       << "XS:A:" << eit.second.getStrand() << "\t"
+                       << "NH:i:1" << std::endl;
+                id_counter++;
+            }
+            pos++;
+//            for (v2 = nexts.begin();v2 != nexts.end(); v2++){
+//                for(auto& v1_next : (*v1)->second.getOutEdges()){
+//                    if (v1_next.first->first == (*v2)->first){ // if they are the same
+//                        if(v1_next.first->second.getWeight() == (*v2)->second.getWeight()){ // make sure the weight is the same
+//                            for (int iter=0;iter<v1_next.first->second.getWeight();iter++){
+//
+//                            }
+//                        }
+//                    }
+//                }
+//            }
+        }
+    }
+
     // first identify the maximum sequence of points using a bfs
 
     // secondly use a dfs on the sequence in order to identify sequences within a given cluster - why use a BFS first then? - only to find the next iterator after the bfs
 
     // we can write the sam output as a depth first search that takes overlaps (implicit edges) into account as well
-
-
-    this->generate_sam_header(sam_fp,cl);
-
-    sam_fp<<"body"<<std::endl;
 
     sam_fp.close();
 }
