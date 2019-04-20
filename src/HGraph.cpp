@@ -1315,7 +1315,7 @@ void HGraph::to_sam(std::string& cl) {
                 sam_fp << "read_" << id_counter << "\t"
                        << 0 << "\t" // TODO: need to compute the actual flag
                        << this->hdb->getContigFromID(vit.first.getChr()) << "\t"
-                       << vit.first.getStart() << "\t"
+                       << vit.first.getStart()+1 << "\t"
                        << 60 << "\t"
                        << (int)vit.first.getLength() << "M" << "\t"
                        << "*" << "\t" // TODO: needs to reflect paired info for paired-end mode
@@ -1343,11 +1343,11 @@ void HGraph::to_sam(std::string& cl) {
                 sam_fp << "read_" << id_counter << "\t"
                        << 0 << "\t" // TODO: need to compute the actual flag
                        << this->hdb->getContigFromID(eit.second.getChr()) << "\t"
-                       << (*v1)->first.getStart() << "\t"
+                       << (*v1)->first.getStart()+1 << "\t"
                        << 60 << "\t"
-                       << (int)(*v1)->first.getLength() - eit.second.getStartCor() << "M"
-                                << (eit.second.getEnd() + eit.second.getEndCor())-(eit.second.getStart() - eit.second.getStartCor()) << "N"
-                                << nexts.at(pos)->first.getLength() - eit.second.getEndCor() << "M" << "\t"
+                       << ((int)(*v1)->first.getLength() - eit.second.getStartCor()) << "M"
+                                << (eit.second.getEnd() + eit.second.getEndCor())-(eit.second.getStart() - eit.second.getStartCor())-1 << "N"
+                                << nexts.at(pos)->first.getLength() - eit.second.getEndCor()+1 << "M" << "\t"
                        << "*" << "\t" // TODO: needs to reflect paired info for paired-end mode
                        << 0 << "\t" // TODO: needs to reflect paired info for paired-end mode
                        << 0 << "\t" // TODO: needs to reflect paired info for paired-end mode
