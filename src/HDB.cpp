@@ -152,12 +152,12 @@ void HDB::process_contig(std::string seq, uint8_t chrID, uint8_t strand, uint8_t
                 continue;
             }
             this->genom_map_it=this->genom_map.insert(std::pair<std::string,GenVec>(cur_kmer,{}));
-            this->genom_map_it.first->second.emplace_back(std::make_tuple(chrID,strand,i));
+            this->genom_map_it.first->second.push_back(std::make_tuple(chrID,strand,i));
             char *rev_cur_kmer = new char[this->kmerlen];
             strcpy(rev_cur_kmer, cur_kmer.c_str());
             reverseComplement(rev_cur_kmer,this->kmerlen);
             this->genom_map_it=this->genom_map.insert(std::pair<std::string,GenVec>(rev_cur_kmer,{}));
-            this->genom_map_it.first->second.emplace_back(std::make_tuple(chrID,rev_strand,i));
+            this->genom_map_it.first->second.push_back(std::make_tuple(chrID,rev_strand,i));
             delete [] rev_cur_kmer;
         }
     }
@@ -174,12 +174,12 @@ void HDB::process_contig(std::string seq, uint8_t chrID, uint8_t strand, uint8_t
                 continue;
             }
             this->genom_map_it=this->genom_map.insert(std::pair<std::string,GenVec>(cur_kmer,{}));
-            this->genom_map_it.first->second.emplace_back(std::make_tuple(chrID,strand,i));
+            this->genom_map_it.first->second.push_back(std::make_tuple(chrID,strand,i));
             char *rev_cur_kmer = new char[this->kmerlen];
             strcpy(rev_cur_kmer, cur_kmer.c_str());
             reverseComplement(rev_cur_kmer,this->kmerlen);
             this->genom_map_it=this->genom_map.insert(std::pair<std::string,GenVec>(rev_cur_kmer,{}));
-            this->genom_map_it.first->second.emplace_back(std::make_tuple(chrID,rev_strand,i));
+            this->genom_map_it.first->second.push_back(std::make_tuple(chrID,rev_strand,i));
             delete [] rev_cur_kmer;
         }
     }
@@ -383,7 +383,7 @@ void HDB::load_genom_db(std::ifstream& stream) {
             std::getline(sub_ss,chrID,':');
             std::getline(sub_ss,strand,'@');
             std::getline(sub_ss,pos,';');
-            gv.emplace_back(std::make_tuple((uint8_t)std::stoi(chrID),(uint8_t)std::stoi(strand),(uint32_t)std::stoi(pos)));
+            gv.push_back(std::make_tuple((uint8_t)std::stoi(chrID),(uint8_t)std::stoi(strand),(uint32_t)std::stoi(pos)));
         }
         this->genom_map.insert(std::make_pair(kmer,gv));
     }
@@ -422,7 +422,7 @@ void HDB::load_trans_db(std::ifstream& stream) {
                 std::getline(sub_sub_ss,end,',');
                 ev._push_back((uint32_t)std::stoi(start),(uint32_t)std::stoi(end));
             }
-            vev.emplace_back(ev);
+            vev.push_back(ev);
         }
         this->trans_map._insert(kmer,vev);
     }

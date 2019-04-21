@@ -35,7 +35,7 @@ int hairpin_quant(int argc,char* argv[]){
         MIN   = 'i',
         MIN_MM= 'l',
         MAX_MM= 'j',
-        SAM   = 's',
+        push_back   = 's',
         CANONICAL = 'c',
         SEMICANONICAL = 'e',
         NONCANONICAL = 'n',
@@ -53,7 +53,7 @@ int hairpin_quant(int argc,char* argv[]){
     args_quant.add_int(Opt_Quant::MIN,"min_intron",20,"minimum allowed intron length");
     args_quant.add_int(Opt_Quant::MIN_MM,"min_mismatch",0,"minimum number of mismatches permitted for a read");
     args_quant.add_int(Opt_Quant::MAX_MM,"max_mismatch",0,"maximum number of mismatches permitted for a read");
-    args_quant.add_flag(Opt_Quant::SAM,"sam","should an alignment be generated from the graph"); // pass all the other graph options
+    args_quant.add_flag(Opt_Quant::push_back,"push_back","should an alignment be generated from the graph"); // pass all the other graph options
     args_quant.add_double(Opt_Quant::CANONICAL,"can",1.0,"0-1 weight of canonical donor and acceptor bases");
     args_quant.add_double(Opt_Quant::SEMICANONICAL,"semi",0.5,"0-1 weight of semi-canonical donor and acceptor bases");
     args_quant.add_double(Opt_Quant::NONCANONICAL,"non",0.25,"0-1 weight of noncanonical donor and acceptor basees");
@@ -77,7 +77,7 @@ int hairpin_quant(int argc,char* argv[]){
     std::cerr<<"parsing the graph"<<std::endl;
     hg.parse_graph();
     hg.write_intron_gff();
-    if (args_quant.get_flag(Opt_Quant::SAM)) {
+    if (args_quant.get_flag(Opt_Quant::push_back)) {
         // first create the execution string
         std::string cl="hairpin ";
         for (int i=0;i<argc;i++){
@@ -89,7 +89,7 @@ int hairpin_quant(int argc,char* argv[]){
                 cl+=argv[i];
             }
         }
-        hg.to_sam(cl);
+        hg.to_push_back(cl);
     }
     hg.print_stats();
 

@@ -131,7 +131,7 @@ public:
     int addOutEdge(std::map<VCoords,Vertex>::iterator vit){
         this->e_it = this->outEdges.insert(std::make_pair(vit,Edge_props()));
         if(!this->e_it.second){ // not inserted - need to increment the weight
-            this->e_it.first->second.incWeight();
+//            this->e_it.first->second.incWeight(); // TODO: needs to assign edge weight rather than vertex weight
             return 0;
         }
         return 1;
@@ -139,7 +139,7 @@ public:
     int addInEdge(std::map<VCoords,Vertex>::iterator vit){
         this->e_it = this->inEdges.insert(std::make_pair(vit,Edge_props()));
         if(!this->e_it.second){ // not inserted - need to increment the weight
-            this->e_it.first->second.incWeight();
+//            this->e_it.first->second.incWeight(); // TODO: needs to assign edge weight rather than vertex weight
             return 0;
         }
         return 1;
@@ -283,8 +283,8 @@ public:
     uint8_t getChr() const {return prevs[0]->first.getChr();}
     uint8_t getStrand() const {return prevs[0]->first.getStrand();}
 
-    void addNext(std::map<VCoords,Vertex>::iterator vt){this->nexts.emplace_back(vt);}
-    void addPrev(std::map<VCoords,Vertex>::iterator vt){this->prevs.emplace_back(vt);}
+    void addNext(std::map<VCoords,Vertex>::iterator vt){this->nexts.push_back(vt);}
+    void addPrev(std::map<VCoords,Vertex>::iterator vt){this->prevs.push_back(vt);}
     std::vector<std::map<VCoords,Vertex>::iterator> getNexts() const {return this->nexts;}
     std::vector<std::map<VCoords,Vertex>::iterator> getPrevs() const {return this->prevs;}
 

@@ -97,22 +97,22 @@ void HGraph::add_read(std::string &read) {
                         else{
                             if((dist-this->stats.kmerlen) >= this->minIntron && (dist-this->stats.kmerlen) <= this->maxIntron){
                                 tmp_case_two_flag=true;
-                                tmp_case_two.emplace_back(cv);
+                                tmp_case_two.push_back(cv);
                             }
                             else{tmp_case_three_flag = true;} // case three evaluation - case three - no closest previous position observed
                         }
                     }
                     // preliminary case evaluation is performed here
                     if (tmp_case_one_flag){ // if for a given kmer match a 1-based distance was found - great - can clear cases two and three
-                        case_one.emplace_back(tmp_case_one);
+                        case_one.push_back(tmp_case_one);
                         continue;
                     }
                     if (tmp_case_two_flag) { // no distance 1 was found - need to remember current multimapper value
                         for(auto cv: tmp_case_two) {
-                            case_two.emplace_back(std::make_pair(std::make_pair(item, std::make_pair(this->stats.kmerlen,i)), cv));
+                            case_two.push_back(std::make_pair(std::make_pair(item, std::make_pair(this->stats.kmerlen,i)), cv));
                         }
                     }
-                    if (tmp_case_three_flag){ case_three.emplace_back(std::make_pair(item,std::make_pair(this->stats.kmerlen,i)));}
+                    if (tmp_case_three_flag){ case_three.push_back(std::make_pair(item,std::make_pair(this->stats.kmerlen,i)));}
                 }
                 // also need to know if any given previous entry has never been observed in the current round of evaluation
                 // if such is the case - such entry needs to be pushed into the final_extends immediately and removed from the current search space
@@ -189,7 +189,7 @@ void HGraph::add_read(std::string &read) {
 
                 // here we can check if the index has been created for
                 // ideally vertex creation would also be performed here instead of above, since that way we could easily remove vertices before inserting them into the map
-                read_chains.emplace_back(std::make_tuple(idx1,idx2,ci1->first,ci2->first));
+                read_chains.push_back(std::make_tuple(idx1,idx2,ci1->first,ci2->first));
 
 //                this->add_edge(ci1->first,ci2->first); // form an edge
             }
@@ -215,21 +215,21 @@ void HGraph::add_read(std::string &read) {
         for (auto& ri : read_chains){
             if (vt_chains.empty()) {
 //                std::cerr << "hello" << std::endl;
-                vt_chains.emplace_back(std::vector<std::pair<int,std::map<VCoords, Vertex>::iterator> >{std::make_pair(std::get<0>(ri),std::get<2>(ri))});
-                vt_chains.back().emplace_back(std::make_pair(std::get<1>(ri),std::get<3>(ri)));
+                vt_chains.push_back(std::vector<std::pair<int,std::map<VCoords, Vertex>::iterator> >{std::make_pair(std::get<0>(ri),std::get<2>(ri))});
+                vt_chains.back().push_back(std::make_pair(std::get<1>(ri),std::get<3>(ri)));
             }
             else{
                 bool found = false;
                 for(auto& vt_it : vt_chains){
                     if (vt_it.back().first == std::get<0>(ri)){ // found a match
-                        vt_it.emplace_back(std::make_pair(std::get<1>(ri),std::get<3>(ri)));
+                        vt_it.push_back(std::make_pair(std::get<1>(ri),std::get<3>(ri)));
                         found = true;
                     }
                 }
                 if (!found){ // nothing was found - create a new entry
 //                    std::cerr<<std::get<0>(ri)<<"\t"<<std::get<1>(ri)<<std::endl;
-                    vt_chains.emplace_back(std::vector<std::pair<int,std::map<VCoords, Vertex>::iterator> >{std::make_pair(std::get<0>(ri),std::get<2>(ri))});
-                    vt_chains.back().emplace_back(std::make_pair(std::get<1>(ri),std::get<3>(ri)));
+                    vt_chains.push_back(std::vector<std::pair<int,std::map<VCoords, Vertex>::iterator> >{std::make_pair(std::get<0>(ri),std::get<2>(ri))});
+                    vt_chains.back().push_back(std::make_pair(std::get<1>(ri),std::get<3>(ri)));
                 }
             }
         }
@@ -434,7 +434,7 @@ void HGraph::_get_starts(std::map<VCoords,Vertex>::iterator vit,std::vector<int>
         }
     }
     else{
-        starts.emplace_back(vit->first.getStart());
+        starts.push_back(vit->first.getStart());
     }
 }
 
@@ -451,7 +451,7 @@ void HGraph::_get_ends(std::map<VCoords,Vertex>::iterator vit,std::vector<int>& 
         }
     }
     else{
-        ends.emplace_back(vit->first.getEnd());
+        ends.push_back(vit->first.getEnd());
     }
 }
 
@@ -609,7 +609,7 @@ std::map<VCoords,Vertex>::iterator HGraph::taylor_bfs(std::map<VCoords,Vertex>::
 
     // Mark the current node as visited and enqueue it
     visited.insert(cur_vit);
-    queue.emplace_back(cur_vit);
+    queue.push_back(cur_vit);
 
     auto last_vit = cur_vit;
 
@@ -625,7 +625,7 @@ std::map<VCoords,Vertex>::iterator HGraph::taylor_bfs(std::map<VCoords,Vertex>::
         for (auto eit : cur_vit->second.getOutEdges()){
             if(visited.find(eit.first) == visited.end()){ // element did not previously exist
                 visited.insert(eit.first);
-                queue.emplace_back(eit.first);
+                queue.push_back(eit.first);
                 if (last_vit->first < eit.first->first){ // is this vertex a better candidate for the last vertex in the sequence?
                     last_vit = eit.first;
                 }
@@ -638,7 +638,7 @@ std::map<VCoords,Vertex>::iterator HGraph::taylor_bfs(std::map<VCoords,Vertex>::
         if (this->overlap(cur_vit,next_vit)){
             if (visited.find(next_vit) == visited.end()){
                 visited.insert(next_vit);
-                queue.emplace_back(next_vit);
+                queue.push_back(next_vit);
                 if(last_vit->first < next_vit->first){ // is this vertex a better candidate for the last vertex in the sequence?
                     last_vit = next_vit;
                 }
@@ -703,7 +703,7 @@ void HGraph::_helper_topological_sort_explicit(std::map<VCoords,Vertex>::iterato
             this->_helper_topological_sort_explicit(eit.first,visited,stack);
         }
     }
-    stack.emplace_back(cur_vit);
+    stack.push_back(cur_vit);
 
 }
 
@@ -778,7 +778,7 @@ void HGraph::shortest_path(){
 void HGraph::_helper_taylor_dfs_explicit(std::map<VCoords,Vertex>::iterator cur_vit, std::set<std::map<VCoords,Vertex>::iterator,Vertex::vmap_cmp>& visited, std::vector<int>& lens,int cur_len){
     visited.insert(cur_vit); // mark the current vertex as visited
     if (cur_vit->second.getOutEdges().empty()){ // found an end
-        lens.emplace_back(cur_len+(int)cur_vit->first.getLength());
+        lens.push_back(cur_len+(int)cur_vit->first.getLength());
     }
     else{
         // iterate over all explicit edges
@@ -824,12 +824,12 @@ void HGraph::remove_vertex_dfs(std::map<VCoords,Vertex>::iterator vit){
             if (cur_emap_it->second.isInEmpty() && cur_emap_it->second.isOutEmpty()){
                 this->emap.erase(cur_emap_it); // remove the edge all together
                 if (isKey){
-                    edge_key_removed.emplace_back(true);
+                    edge_key_removed.push_back(true);
                     removed = true;
                 }
             }
             if (isKey && !removed){
-                edge_key_removed.emplace_back(false);
+                edge_key_removed.push_back(false);
             }
         }
         eit.first->second.remove_out_edge(vit); // now need to remove the association from the previous vertex
@@ -851,12 +851,12 @@ void HGraph::remove_vertex_dfs(std::map<VCoords,Vertex>::iterator vit){
             if (cur_emap_it->second.isInEmpty() && cur_emap_it->second.isOutEmpty()){
                 this->emap.erase(cur_emap_it); // remove the edge all together
                 if (isKey){
-                    edge_key_removed.emplace_back(true);
+                    edge_key_removed.push_back(true);
                     removed = true;
                 }
             }
             if (isKey && !removed){
-                edge_key_removed.emplace_back(false);
+                edge_key_removed.push_back(false);
             }
         }
         eit.first->second.remove_in_edge(vit);
@@ -962,11 +962,11 @@ void HGraph::filter_best_donor_acceptor(SJS& sm){
     for (auto sm_it = sm.begin(); sm_it != sm.end();sm_it++){
         cur_score = std::get<0>(sm_it->second) * std::get<1>(sm_it->second);
         if (cur_score < best_score){
-            bad_its.emplace_back(sm_it);
+            bad_its.push_back(sm_it);
         }
         else if (cur_score > best_score){
             if (sm_it != sm.begin()){
-                bad_its.emplace_back(prev_it);
+                bad_its.push_back(prev_it);
             }
             prev_it = sm_it;
             best_score = cur_score;
