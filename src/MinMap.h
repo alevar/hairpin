@@ -71,7 +71,7 @@ public:
     ~EVec() = default;
 
     void _push_back(uint32_t start, uint32_t end){
-        coords.push_back(start,end);
+        coords.emplace_back(start,end);
         size++;
     }
     void _pop_back(){
@@ -155,7 +155,7 @@ public:
         if(mm_it.second){ // the kmer previously did not exist
             numKmer++;
         }
-        mm_it.first->second.push_back(chrID,strand);
+        mm_it.first->second.emplace_back(chrID,strand);
         return mm_it.first;
     } // insert key and initiate a new EVec with given a given chrID and strand information
     KmerMap::iterator _insert(std::string key, uint8_t chrID,uint8_t strand, uint32_t start, uint32_t end){ // initiate with the coordinate pair
@@ -163,7 +163,7 @@ public:
         if(mm_it.second){ // the kmer previously did not exist
             numKmer++;
         }
-        mm_it.first->second.push_back(chrID,strand);
+        mm_it.first->second.emplace_back(chrID,strand);
         mm_it.first->second.back()._push_back(start,end);
         return mm_it.first;
     }
