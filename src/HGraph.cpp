@@ -58,18 +58,20 @@ void HGraph::add_read(std::string &read) {
         this->stats.numReadsIgnored++;
         return;
     }
+    int read_length = read.length();
     std::string kmer;
 
     std::map<VCoords,Vertex>::iterator cur_vertex_it,cur_vertex_it2;
 
     std::map<std::map<VCoords,Vertex>::iterator,uint8_t,map_vit_cmp> extends_final; // holds final extension which should no longer be modified
     std::map<CoordVec,PosPair> extends; // groups of vertices that form stretches - will form edges between them afterwards; second element is the current length of the extendion
-
+    bool found=false;
     for(int i=0;i<(read.length()-this->stats.kmerlen)+1;i++){
         kmer=read.substr(i, static_cast<unsigned long>(this->stats.kmerlen));
 
         this->genom_it=this->hdb->find_genom(kmer);
         if(this->genom_it!=this->hdb->genom_end()){ // match to genome found
+            found=true;
             this->stats.numKmerMatchedGenom++;
 
             if(!extends.empty()){ // need to evaluate the predecessors, if a match did not occur near one of the positions
@@ -158,6 +160,10 @@ void HGraph::add_read(std::string &read) {
             this->stats.numKmerUnmatched++;
         }
     }
+    if (!found){
+        this->stats.numReadsIgnored++;
+        return;
+    }
     // the read has been evaluated
     // now we can proceed to generate vertices and edges based on the final extensions
     //merge extends with the extends_final
@@ -197,7 +203,7 @@ void HGraph::add_read(std::string &read) {
         }
         idx1++;
     }
-    int min_len = 145;
+    int min_len = read_length;
     if(!read_chains.empty()) {
         if (read_chains.size()==1){
             cur_vertex_it = std::get<2>(read_chains.back());
@@ -903,7 +909,7 @@ void HGraph::enforce_dfs_constraints(){
 //            std::cerr<<"dfs"<<std::endl;
             min_len = std::min_element(std::begin(lens),std::end(lens));
             max_len = std::max_element(std::begin(lens),std::end(lens));
-            if(*min_len < 150 && *max_len < 150){
+            if(*min_len < 105 && *max_len < 105){
                 cur_vit++;
                 this->remove_vertex_dfs(*cur_vertices.begin());
             }
@@ -1207,7 +1213,10 @@ void HGraph::edit_graph(std::map<Edge,Aggregate_edge_props>::iterator& eit, SJS&
 void HGraph::parse_edges(){
     auto eit = this->emap.begin();
 
+    int edge_counter=0;
     for (;eit != this->emap.end();){
+        std::cerr<<this->emap.size()<<"\t"<<edge_counter<<std::endl;
+        edge_counter++;
 
         SJS sjs_map;
         evaluate_donor_acceptor(*eit,sjs_map);
@@ -1257,10 +1266,10 @@ void HGraph::parse_graph() {
     parse_edges();
 
     std::cerr<<"\tparsing vertices: pass #2"<<std::endl;
-    this->parse_vertices();
+//    this->parse_vertices();
 
     std::cerr<<"\tmaking dot"<<std::endl;
-    make_dot();
+//    make_dot();
 
 }
 

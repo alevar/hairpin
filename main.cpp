@@ -18,9 +18,14 @@ void process_reads_single(std::string readsFP, HGraph& hg){
     FastaReader fastaReader(readsFP);
     FastaRecord read;
 
+    int read_counter=0;
     while (fastaReader.good()) {
+        if (read_counter % 10000==0){
+            std::cerr<<read_counter<<std::endl;
+        }
         fastaReader.next(read);
         hg.add_read(read.seq_);
+        read_counter++;
     }
 }
 
