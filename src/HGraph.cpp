@@ -70,6 +70,13 @@ void HGraph::add_read(std::string &read) {
         kmer=read.substr(i, static_cast<unsigned long>(this->stats.kmerlen));
 
         this->genom_it=this->hdb->find_genom(kmer);
+
+//        std::cerr<<this->genom_it->second.size()<<std::endl;
+        if (this->genom_it->second.size()>100){
+            read_length--;
+            break;
+        }
+
         if(this->genom_it!=this->hdb->genom_end()){ // match to genome found
             found=true;
             this->stats.numKmerMatchedGenom++;
@@ -1266,7 +1273,7 @@ void HGraph::parse_graph() {
     parse_edges();
 
     std::cerr<<"\tparsing vertices: pass #2"<<std::endl;
-//    this->parse_vertices();
+    this->parse_vertices();
 
     std::cerr<<"\tmaking dot"<<std::endl;
 //    make_dot();
