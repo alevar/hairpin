@@ -230,21 +230,21 @@ public:
     }
 
     void remove_vt(std::map<VCoords,Vertex>::iterator vit){
-        VCoords searching_vit = vit->first;
-        if (this->vertices.find(vit->first) == this->vertices.end()){
-            std::cerr<<"VCoords not found"<<std::endl;
-        }
-//         let's do a check in the out and in edges here as well
-        if (!vit->second.getOutEdges().empty()){
-            std::cerr<<"something's wrong out"<<std::endl;
-        }
-        if (!vit->second.getInEdges().empty()){
-            std::cerr<<"something's wrong in"<<std::endl;
-        }
+//        VCoords searching_vit = vit->first;
+//        if (this->vertices.find(vit->first) == this->vertices.end()){
+//            std::cerr<<"VCoords not found"<<std::endl;
+//        }
+////         let's do a check in the out and in edges here as well
+//        if (!vit->second.getOutEdges().empty()){
+//            std::cerr<<"something's wrong out"<<std::endl;
+//        }
+//        if (!vit->second.getInEdges().empty()){
+//            std::cerr<<"something's wrong in"<<std::endl;
+//        }
         this->vertices.erase(vit);
-        if (this->vertices.find(vit->first) != this->vertices.end()){
-            std::cerr<<"the vertex was not removed"<<std::endl;
-        }
+//        if (this->vertices.find(vit->first) != this->vertices.end()){
+//            std::cerr<<"the vertex was not removed"<<std::endl;
+//        }
     }
 
 private:
@@ -346,6 +346,7 @@ public:
     void sort_graph();
     void parse_graph();
     void write_intron_gff();
+    void write_raw_intron_gff();
 
 private:
 

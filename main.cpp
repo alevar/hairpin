@@ -20,9 +20,9 @@ void process_reads_single(std::string readsFP, HGraph& hg){
 
     int read_counter=0;
     while (fastaReader.good()) {
-        if (read_counter % 10000==0){
-            std::cerr<<read_counter<<std::endl;
-        }
+//        if (read_counter % 10000==0){
+//            std::cerr<<read_counter<<std::endl;
+//        }
         fastaReader.next(read);
         hg.add_read(read.seq_);
         read_counter++;
@@ -79,6 +79,7 @@ int hairpin_quant(int argc,char* argv[]){
                    args_quant.get_int(Opt_Quant::MIN_EL));
     std::cerr<<"processing reads"<<std::endl;
     process_reads_single(args_quant.get_string(Opt_Quant::UNPAIR),hg);
+//    hg.write_raw_intron_gff();
     std::cerr<<"parsing the graph"<<std::endl;
     hg.parse_graph();
     hg.write_intron_gff();
