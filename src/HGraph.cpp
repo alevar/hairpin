@@ -672,17 +672,17 @@ void HGraph::remove_vertex(std::map<VCoords,Vertex>::iterator vit){
         cur_emap_it = this->emap.find(std::make_pair(eit.first,vit));
         if (cur_emap_it != this->emap.end()) {
             // now we need to remove this pair of vertices from the edge
-//            std::cerr<<"before in"<<std::endl;
-//            testEdge(cur_emap_it);
+            std::cerr<<"before in"<<std::endl;
+            testEdge(cur_emap_it);
             cur_emap_it->second.remove_vertex_pair(eit.first, vit);
-//            testEdge(cur_emap_it);
-//            std::cerr<<"after in"<<std::endl;
+            testEdge(cur_emap_it);
+            std::cerr<<"after in"<<std::endl;
 
             if (cur_emap_it->second.isInEmpty() && cur_emap_it->second.isOutEmpty()){
                 this->emap.erase(cur_emap_it); // remove the edge all together
-//                if (this->emap.find(cur_emap_it->first) != this->emap.end()){
-//                    std::cerr<<"edge still found - in"<<std::endl;
-//                }
+                if (this->emap.find(cur_emap_it->first) != this->emap.end()){
+                    std::cerr<<"edge still found - in"<<std::endl;
+                }
             }
         }
         else{
@@ -693,20 +693,20 @@ void HGraph::remove_vertex(std::map<VCoords,Vertex>::iterator vit){
     }
     for (auto eit : vit->second.getOutEdges()){ // for all outgoing edges
         // first find iterator to the edge
-//        std::cerr<<"before out"<<std::endl;
-//        testEdge(cur_emap_it);
+        std::cerr<<"before out"<<std::endl;
+        testEdge(cur_emap_it);
         cur_emap_it = this->emap.find(std::make_pair(vit,eit.first));
-//        testEdge(cur_emap_it);
-//        std::cerr<<"after out"<<std::endl;
+        testEdge(cur_emap_it);
+        std::cerr<<"after out"<<std::endl;
         // now we need to remove this pair of vertices from the edge
         if (cur_emap_it != this->emap.end()) {
             cur_emap_it->second.remove_vertex_pair(vit,eit.first);
 
             if (cur_emap_it->second.isInEmpty() && cur_emap_it->second.isOutEmpty()){
                 this->emap.erase(cur_emap_it); // remove the edge all together
-//                if (this->emap.find(cur_emap_it->first) != this->emap.end()){
-//                    std::cerr<<"edge still found - out"<<std::endl;
-//                }
+                if (this->emap.find(cur_emap_it->first) != this->emap.end()){
+                    std::cerr<<"edge still found - out"<<std::endl;
+                }
             }
         }
         else{
