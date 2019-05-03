@@ -1,5 +1,5 @@
 # hairpin
-Fast and reference-free novel isofom assembly and quantification.\
+Fast and reference-free novel isofom assembly and quantification.
 
 Hairpin is a tool that leverages the speed of pseudo-alignment techniques via exact-matching and dyrected acyclic graph representation of all potential mappings of reads in the transcritome landscape to accurately resolve ambiguitites via assesment of the local structure within the graph.
 
