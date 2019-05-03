@@ -6,7 +6,7 @@ Hairpin is a tool that leverages the speed of pseudo-alignment techniques via ex
 # Installation
 version 3.13 of CMAKE required\
 support for c++14 standard required\
-`cmake ./`
+`cmake ./`\
 `make`
 
 Due to the short development cycle, there are several memory allocation and access bugs still present in the code. As such, certain combinations of parameters and datasets might result in Segmentation Faults. Most of such mistakes can be avoided by changing paramters such as the kmer size.
